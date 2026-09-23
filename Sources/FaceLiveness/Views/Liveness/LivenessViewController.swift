@@ -185,22 +185,10 @@ extension _LivenessViewController: FaceLivenessViewControllerPresenter {
     func drawOvalInCanvas(_ ovalRect: CGRect) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            guard let previewLayer = self.previewLayer else { return }
-
-            // drop any previous oval so a redraw replaces it rather than layering over it
+            // Keep the server-provided oval geometry for face-position matching, but do not
+            // draw Amplify's oval over Envoy's circular selfie preview.
             self.ovalView?.removeFromSuperview()
-
-            let ovalView = OvalView(
-                frame: previewLayer.frame,
-                ovalFrame: ovalRect
-            )
-            self.ovalView = ovalView
-            ovalView.center = previewLayer.position
-            self.view.insertSubview(
-                ovalView,
-                belowSubview: self.freshnessView
-            )
-
+            self.ovalView = nil
             self.ovalRect = ovalRect
             self.ovalExists = true
         }
