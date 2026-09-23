@@ -36,58 +36,49 @@ struct _FaceLivenessDetectionView<VideoView: View>: View {
             ZStack(alignment: .topTrailing) {
                 Color(red: 246 / 255, green: 246 / 255, blue: 249 / 255)
 
-                VStack(spacing: 0) {
-                    Text("Take a selfie")
-                        .font(.custom("SofiaPro-Bold", size: 36))
-                        .foregroundColor(Color(red: 48 / 255, green: 53 / 255, blue: 65 / 255))
-                        .padding(.top, 62)
+                Text("Take a selfie")
+                    .font(.custom("SofiaPro-Bold", size: 36))
+                    .foregroundColor(Color(red: 48 / 255, green: 53 / 255, blue: 65 / 255))
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 62)
 
-                    Text("Follow the on-screen instructions")
-                        .font(.custom("SofiaPro-Regular", size: 20))
-                        .foregroundColor(Color(red: 96 / 255, green: 101 / 255, blue: 112 / 255))
-                        .padding(.top, 12)
+                ZStack {
+                    FaceScanProgressRing(
+                        progress: progress,
+                        diameter: diameter + 84
+                    )
 
-                    Spacer(minLength: 48)
+                    Circle()
+                        .fill(Color(red: 31 / 255, green: 35 / 255, blue: 45 / 255))
+                        .frame(width: diameter, height: diameter)
+                        .shadow(color: .black.opacity(0.18), radius: 24, y: 14)
 
-                    ZStack {
-                        FaceScanProgressRing(
-                            progress: progress,
-                            diameter: diameter + 84
-                        )
+                    videoView
+                        .frame(width: diameter, height: diameter)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.white, lineWidth: 5))
 
-                        Circle()
-                            .fill(Color(red: 31 / 255, green: 35 / 255, blue: 45 / 255))
-                            .frame(width: diameter, height: diameter)
-                            .shadow(color: .black.opacity(0.18), radius: 24, y: 14)
-
-                        videoView
-                            .frame(width: diameter, height: diameter)
+                    if let referenceImage {
+                        Image(uiImage: referenceImage)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 74, height: 74)
                             .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white, lineWidth: 5))
-
-                        if let referenceImage {
-                            Image(uiImage: referenceImage)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 74, height: 74)
-                                .clipShape(Circle())
-                                .overlay(Circle().stroke(Color.white, lineWidth: 3))
-                                .shadow(color: .black.opacity(0.15), radius: 8, y: 5)
-                                .offset(
-                                    x: diameter / 2 - 48,
-                                    y: diameter / 2 - 126
-                                )
-                        }
+                            .overlay(Circle().stroke(Color.white, lineWidth: 3))
+                            .shadow(color: .black.opacity(0.15), radius: 8, y: 5)
+                            .offset(
+                                x: diameter / 2 - 48,
+                                y: diameter / 2 - 126
+                            )
                     }
-                    .frame(width: diameter + 84, height: diameter + 84)
-
-                    InstructionContainerView(viewModel: viewModel)
-                        .frame(maxWidth: 520)
-                        .padding(.top, 22)
-
-                    Spacer(minLength: 24)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(width: diameter + 84, height: diameter + 84)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+
+                InstructionContainerView(viewModel: viewModel)
+                    .frame(maxWidth: 520)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .offset(y: diameter / 2 + 104)
 
                 CloseButton(action: viewModel.closeButtonAction)
                     .padding(.top, 24)
