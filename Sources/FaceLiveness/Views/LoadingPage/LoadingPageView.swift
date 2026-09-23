@@ -8,14 +8,15 @@
 import SwiftUI
 
 struct LoadingPageView: View {
-    
+
     var body: some View {
-        VStack {
-            HStack(spacing: 5) {
-                ProgressView()
-                Text(LocalizedStrings.challenge_connecting)
-            }
-            
+        ZStack {
+            Color(red: 246 / 255, green: 246 / 255, blue: 249 / 255)
+                .ignoresSafeArea()
+
+            ProgressView()
+                .tint(Color(red: 63 / 255, green: 68 / 255, blue: 80 / 255))
+                .scaleEffect(1.35)
         }
     }
 }
