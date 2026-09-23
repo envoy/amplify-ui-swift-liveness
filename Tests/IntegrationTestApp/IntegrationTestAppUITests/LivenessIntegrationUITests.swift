@@ -40,7 +40,7 @@ class CreateLivenessSessionUITests: XCTestCase {
         XCTAssert(app!.buttons[UIConstants.BeginCheck.primaryButton].exists)
         app!.buttons[UIConstants.BeginCheck.primaryButton].tap()
         Thread.sleep(forTimeInterval: 2)
-        XCTAssert(app!.buttons[UIConstants.LivenessCheck.closeButton].exists)
+        XCTAssertFalse(app!.buttons[UIConstants.LivenessCheck.closeButton].exists)
         XCTAssert(app!.staticTexts[UIConstants.LivenessCheck.moveInstruction].exists)
         Thread.sleep(forTimeInterval: 4)
         XCTAssert(app!.staticTexts[UIConstants.LivenessCheck.holdInstruction].exists)

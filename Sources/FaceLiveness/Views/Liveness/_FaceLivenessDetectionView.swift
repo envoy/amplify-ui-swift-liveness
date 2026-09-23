@@ -33,7 +33,7 @@ struct _FaceLivenessDetectionView<VideoView: View>: View {
         GeometryReader { geometry in
             let diameter = min(410, geometry.size.height * 0.4, geometry.size.width * 0.56)
 
-            ZStack(alignment: .topTrailing) {
+            ZStack {
                 Color(red: 246 / 255, green: 246 / 255, blue: 249 / 255)
 
                 Text("Take a selfie")
@@ -67,8 +67,8 @@ struct _FaceLivenessDetectionView<VideoView: View>: View {
                             .overlay(Circle().stroke(Color.white, lineWidth: 3))
                             .shadow(color: .black.opacity(0.15), radius: 8, y: 5)
                             .offset(
-                                x: diameter / 2 - 48,
-                                y: diameter / 2 - 126
+                                x: diameter / 2 - 42,
+                                y: diameter / 2 - 42
                             )
                     }
                 }
@@ -80,9 +80,6 @@ struct _FaceLivenessDetectionView<VideoView: View>: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                     .offset(y: diameter / 2 + 104)
 
-                CloseButton(action: viewModel.closeButtonAction)
-                    .padding(.top, 24)
-                    .padding(.trailing, 32)
             }
         }
         .edgesIgnoringSafeArea(.all)
@@ -120,18 +117,20 @@ private struct FaceScanProgressRing: View {
 
     var body: some View {
         let completed = Int(min(max(progress, 0), 1) * Double(Self.segmentCount))
+        let innerRadius = diameter / 2 - 29
 
         ZStack {
             ForEach(0 ..< Self.segmentCount, id: \.self) { index in
                 let rank = Self.completionOrder.firstIndex(of: index) ?? index
                 let isCompleted = rank < completed
+                let lineLength: CGFloat = isCompleted ? 29 : 12
 
                 Capsule()
                     .fill(isCompleted
                         ? Color(red: 30 / 255, green: 204 / 255, blue: 106 / 255)
                         : Color(red: 192 / 255, green: 196 / 255, blue: 203 / 255))
-                    .frame(width: 4.5, height: isCompleted ? 29 : 12)
-                    .offset(y: -(diameter / 2 - (isCompleted ? 14.5 : 6)))
+                    .frame(width: 4.5, height: lineLength)
+                    .offset(y: -(innerRadius + lineLength / 2))
                     .rotationEffect(.degrees(Double(index) * 6))
                     .animation(.easeOut(duration: 0.22), value: completed)
             }

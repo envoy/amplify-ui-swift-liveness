@@ -140,16 +140,9 @@ final class _LivenessViewController: UIViewController {
 }
 
 extension _LivenessViewController: FaceLivenessViewControllerPresenter {
-    func displaySingleFrame(uiImage: UIImage) {
+    func displaySingleFrame(uiImage _: UIImage) {
         DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            guard let previewLayer = self.previewLayer else { return }
-            let imageView = UIImageView(image: uiImage)
-            imageView.frame = previewLayer.frame
-            self.view.addSubview(imageView)
-            (previewLayer as? AVCaptureVideoPreviewLayer)?.session = nil
-            previewLayer.removeFromSuperlayer()
-            self.viewModel.stopRecording()
+            self?.viewModel.stopRecording()
         }
     }
 
