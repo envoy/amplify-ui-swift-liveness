@@ -6,17 +6,21 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct _FaceLivenessDetectionView<VideoView: View>: View {
     let videoView: VideoView
+    let referenceImage: UIImage?
     @ObservedObject var viewModel: FaceLivenessDetectionViewModel
     @Binding var displayResultsView: Bool
 
     init(
         viewModel: FaceLivenessDetectionViewModel,
+        referenceImage: UIImage?,
         @ViewBuilder videoView: @escaping () -> VideoView
     ) {
         self.viewModel = viewModel
+        self.referenceImage = referenceImage
         self.videoView = videoView()
 
         self._displayResultsView = .init(
@@ -26,36 +30,121 @@ struct _FaceLivenessDetectionView<VideoView: View>: View {
     }
 
     var body: some View {
-        ZStack {
-            Color.black
-            ZStack {
-                videoView
-                VStack {
-                    HStack(alignment: .top) {
-                        if viewModel.livenessState.shouldDisplayRecordingIcon {
-                            RecordingButton()
-                                .accessibilityHidden(true)
-                        }
+        GeometryReader { geometry in
+            let diameter = min(410, geometry.size.height * 0.4, geometry.size.width * 0.56)
 
-                        Spacer()
+            ZStack(alignment: .topTrailing) {
+                Color(red: 246 / 255, green: 246 / 255, blue: 249 / 255)
 
-                        CloseButton(
-                            action: viewModel.closeButtonAction
+                VStack(spacing: 0) {
+                    Text("Take a selfie")
+                        .font(.custom("SofiaPro-Bold", size: 36))
+                        .foregroundColor(Color(red: 48 / 255, green: 53 / 255, blue: 65 / 255))
+                        .padding(.top, 62)
+
+                    Text("Follow the on-screen instructions")
+                        .font(.custom("SofiaPro-Regular", size: 20))
+                        .foregroundColor(Color(red: 96 / 255, green: 101 / 255, blue: 112 / 255))
+                        .padding(.top, 12)
+
+                    Spacer(minLength: 48)
+
+                    ZStack {
+                        FaceScanProgressRing(
+                            progress: progress,
+                            diameter: diameter + 84
                         )
+
+                        Circle()
+                            .fill(Color(red: 31 / 255, green: 35 / 255, blue: 45 / 255))
+                            .frame(width: diameter, height: diameter)
+                            .shadow(color: .black.opacity(0.18), radius: 24, y: 14)
+
+                        videoView
+                            .frame(width: diameter, height: diameter)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.white, lineWidth: 5))
+
+                        if let referenceImage {
+                            Image(uiImage: referenceImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 74, height: 74)
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color.white, lineWidth: 3))
+                                .shadow(color: .black.opacity(0.15), radius: 8, y: 5)
+                                .offset(
+                                    x: diameter / 2 - 48,
+                                    y: diameter / 2 - 126
+                                )
+                        }
                     }
-                    .padding()
+                    .frame(width: diameter + 84, height: diameter + 84)
 
-                    InstructionContainerView(
-                        viewModel: viewModel
-                    )
+                    InstructionContainerView(viewModel: viewModel)
+                        .frame(maxWidth: 520)
+                        .padding(.top, 22)
 
-                    Spacer()
+                    Spacer(minLength: 24)
                 }
-                .padding([.leading, .trailing])
-                .aspectRatio(3/4, contentMode: .fit)
                 .frame(maxWidth: .infinity)
+
+                CloseButton(action: viewModel.closeButtonAction)
+                    .padding(.top, 24)
+                    .padding(.trailing, 32)
             }
         }
         .edgesIgnoringSafeArea(.all)
+    }
+
+    private var progress: Double {
+        switch viewModel.livenessState.state {
+        case .initial, .pendingFacePreparedConfirmation, .waitForRecording:
+            return 0.08
+        case .recording(ovalDisplayed: false):
+            return 0.12
+        case .recording(ovalDisplayed: true):
+            return 0.2
+        case .awaitingFaceInOvalMatch(_, let percentage):
+            return 0.2 + min(max(percentage, 0), 1) * 0.65
+        case .faceMatched:
+            return 0.92
+        case .completedNoLightCheck, .completedDisplayingFreshness, .completed,
+             .awaitingDisconnectEvent, .disconnectEventReceived:
+            return 1
+        default:
+            return 0
+        }
+    }
+}
+
+private struct FaceScanProgressRing: View {
+    private static let segmentCount = 60
+    private static let completionOrder = [0, 59, 1, 58, 2] +
+        Array(stride(from: 57, through: 31, by: -1)) +
+        Array(stride(from: 30, through: 3, by: -1))
+
+    let progress: Double
+    let diameter: CGFloat
+
+    var body: some View {
+        let completed = Int(min(max(progress, 0), 1) * Double(Self.segmentCount))
+
+        ZStack {
+            ForEach(0 ..< Self.segmentCount, id: \.self) { index in
+                let rank = Self.completionOrder.firstIndex(of: index) ?? index
+                let isCompleted = rank < completed
+
+                Capsule()
+                    .fill(isCompleted
+                        ? Color(red: 30 / 255, green: 204 / 255, blue: 106 / 255)
+                        : Color(red: 192 / 255, green: 196 / 255, blue: 203 / 255))
+                    .frame(width: 4.5, height: isCompleted ? 29 : 12)
+                    .offset(y: -(diameter / 2 - (isCompleted ? 14.5 : 6)))
+                    .rotationEffect(.degrees(Double(index) * 6))
+                    .animation(.easeOut(duration: 0.22), value: completed)
+            }
+        }
+        .frame(width: diameter, height: diameter)
     }
 }

@@ -18,16 +18,9 @@ class OvalView: UIView {
     }
 
     override func draw(_ rect: CGRect) {
-        let mask = UIBezierPath(rect: bounds)
         let oval = UIBezierPath(ovalIn: ovalFrame)
-        mask.append(oval.reversing())
-
-        UIColor.white.withAlphaComponent(0.9).setFill()
-        mask.fill()
-
-        UIColor.clear.setFill()
-        UIColor.white.setStroke()
-        oval.lineWidth = 8
+        UIColor.white.withAlphaComponent(0.92).setStroke()
+        oval.lineWidth = 5
         oval.stroke()
     }
 

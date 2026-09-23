@@ -14,6 +14,9 @@ class LivenessCaptureSession {
     private let configurationQueue = DispatchQueue(label: "com.amazonaws.faceliveness.sessionconfiguration", qos: .userInteractive)
     let outputDelegate: AVCaptureVideoDataOutputSampleBufferDelegate
     var captureSession: AVCaptureSession?
+    private var videoOutput: AVCaptureVideoDataOutput?
+    private weak var videoPreviewLayer: AVCaptureVideoPreviewLayer?
+    private var videoOrientation: AVCaptureVideoOrientation = .portrait
     
     var outputSampleBufferCapturer: OutputSampleBufferCapturer? {
         return outputDelegate as? OutputSampleBufferCapturer
@@ -24,7 +27,11 @@ class LivenessCaptureSession {
         self.outputDelegate = outputDelegate
     }
 
-    func configureCamera(frame: CGRect) throws -> CALayer {
+    func configureCamera(
+        frame: CGRect,
+        interfaceOrientation: UIInterfaceOrientation = .portrait
+    ) throws -> CALayer {
+        videoOrientation = AVCaptureVideoOrientation(interfaceOrientation)
         try configureCamera()
 
         guard let captureSession = captureSession else {
@@ -88,6 +95,27 @@ class LivenessCaptureSession {
         for output in session.outputs {
             session.removeOutput(output)
         }
+
+        videoOutput = nil
+    }
+
+    func updateInterfaceOrientation(_ interfaceOrientation: UIInterfaceOrientation) {
+        guard interfaceOrientation != .unknown else { return }
+        let orientation = AVCaptureVideoOrientation(interfaceOrientation)
+        videoOrientation = orientation
+
+        if let connection = videoPreviewLayer?.connection,
+           connection.isVideoOrientationSupported {
+            connection.videoOrientation = orientation
+        }
+
+        configurationQueue.async { [weak self] in
+            guard let self,
+                  let connection = videoOutput?.connection(with: .video),
+                  connection.isVideoOrientationSupported
+            else { return }
+            connection.videoOrientation = orientation
+        }
     }
 
     private func teardownExistingSession(input: AVCaptureDeviceInput) {
@@ -118,11 +146,13 @@ class LivenessCaptureSession {
         output.videoSettings = [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA
         ]
+        output.alwaysDiscardsLateVideoFrames = true
+        videoOutput = output
 
         output.connections
             .filter(\.isVideoOrientationSupported)
             .forEach {
-                $0.videoOrientation = .portrait
+                $0.videoOrientation = videoOrientation
                 $0.isVideoMirrored = true
         }
     }
@@ -133,8 +163,28 @@ class LivenessCaptureSession {
     ) -> AVCaptureVideoPreviewLayer {
         let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
         previewLayer.videoGravity = .resizeAspectFill
-        previewLayer.connection?.videoOrientation = .portrait
+        previewLayer.connection?.videoOrientation = videoOrientation
         previewLayer.frame = frame
+        videoPreviewLayer = previewLayer
         return previewLayer
+    }
+}
+
+private extension AVCaptureVideoOrientation {
+    init(_ interfaceOrientation: UIInterfaceOrientation) {
+        switch interfaceOrientation {
+        case .portrait:
+            self = .portrait
+        case .portraitUpsideDown:
+            self = .portraitUpsideDown
+        case .landscapeLeft:
+            self = .landscapeLeft
+        case .landscapeRight:
+            self = .landscapeRight
+        case .unknown:
+            self = .portrait
+        @unknown default:
+            self = .portrait
+        }
     }
 }

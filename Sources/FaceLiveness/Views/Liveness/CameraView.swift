@@ -30,5 +30,7 @@ struct CameraView: UIViewControllerRepresentable {
     func updateUIViewController(
         _ uiViewController: _LivenessViewController,
         context: Context
-    ) {}
+    ) {
+        uiViewController.updateCameraOrientation()
+    }
 }

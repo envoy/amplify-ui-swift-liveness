@@ -19,7 +19,6 @@ public struct FaceLivenessDetectorView: View {
     @State var displayState: DisplayState = .awaitingChallengeType
     @State var displayingCameraPermissionsNeededAlert = false
     @State private var brightnessState = BrightnessState()
-    @StateObject private var orientationObserver = InterfaceOrientationObserver()
 
     private final class BrightnessState {
         var original: CGFloat?
@@ -27,6 +26,7 @@ public struct FaceLivenessDetectorView: View {
 
     let disableStartView: Bool
     let challengeOptions: ChallengeOptions
+    let referenceImage: UIImage?
     let onCompletion: (Result<Void, FaceLivenessDetectionError>) -> Void
 
     let sessionTask: Task<FaceLivenessSession, Error>
@@ -37,6 +37,7 @@ public struct FaceLivenessDetectorView: View {
         region: String,
         disableStartView: Bool = false,
         challengeOptions: ChallengeOptions = .init(),
+        referenceImage: UIImage? = nil,
         isPresented: Binding<Bool>,
         onCompletion: @escaping (Result<Void, FaceLivenessDetectionError>) -> Void
     ) {        
@@ -44,6 +45,7 @@ public struct FaceLivenessDetectorView: View {
         self._isPresented = isPresented
         self.onCompletion = onCompletion
         self.challengeOptions = challengeOptions
+        self.referenceImage = referenceImage
 
         self.sessionTask = Task {
             let session = try await AWSPredictionsPlugin.startFaceLivenessSession(
@@ -85,6 +87,7 @@ public struct FaceLivenessDetectorView: View {
         region: String,
         disableStartView: Bool = false,
         challengeOptions: ChallengeOptions = .init(),
+        referenceImage: UIImage? = nil,
         isPresented: Binding<Bool>,
         onCompletion: @escaping (Result<Void, FaceLivenessDetectionError>) -> Void,
         captureSession: LivenessCaptureSession
@@ -93,6 +96,7 @@ public struct FaceLivenessDetectorView: View {
         self._isPresented = isPresented
         self.onCompletion = onCompletion
         self.challengeOptions = challengeOptions
+        self.referenceImage = referenceImage
 
         self.sessionTask = Task {
             let session = try await AWSPredictionsPlugin.startFaceLivenessSession(
@@ -122,27 +126,7 @@ public struct FaceLivenessDetectorView: View {
     }
 
     public var body: some View {
-        ZStack {
-            // `RotateDeviceView` covers the content but not the accessibility tree
-            content
-                .accessibilityHidden(orientationObserver.decision == .blockUntilPortrait)
-
-            if orientationObserver.decision == .blockUntilPortrait {
-                RotateDeviceView(onClose: cancelFromRotatePrompt)
-            }
-        }
-        .background(
-            InterfaceOrientationReader(
-                onTransition: orientationObserver.beginTransition(with:),
-                onSettled: orientationObserver.settle(in:)
-            )
-            .frame(width: 0, height: 0)
-            .accessibilityHidden(true)
-        )
-        .onChange(of: orientationObserver.orientation) { _ in
-            interruptCheckIfOrientationUnsupported()
-            advanceIfWaitingOnPortrait()
-        }
+        content
         .onReceive(viewModel.$livenessState) { output in
             // one observer for every display state, so any exit that reaches a terminal
             // state dismisses and fires the host's completion exactly once
@@ -223,10 +207,7 @@ public struct FaceLivenessDetectorView: View {
         case .displayingGetReadyView(let challenge, let cameraPosition):
             GetReadyPageView(
                 onBegin: {
-                    // the check must not start underneath the rotate prompt
-                    guard displayState != .displayingLiveness,
-                          orientationObserver.decision == .proceed
-                    else { return }
+                    guard displayState != .displayingLiveness else { return }
                     displayState = .displayingLiveness
                 },
                 beginCheckButtonDisabled: false,
@@ -239,6 +220,7 @@ public struct FaceLivenessDetectorView: View {
         case .displayingLiveness:
             _FaceLivenessDetectionView(
                 viewModel: viewModel,
+                referenceImage: referenceImage,
                 videoView: {
                     CameraView(
                         faceLivenessDetectionViewModel: viewModel
@@ -254,35 +236,14 @@ public struct FaceLivenessDetectorView: View {
         }
     }
 
-    /// Advances from `.awaitingLivenessSession` to the get ready screen (or straight to the
-    /// check) once the interface is portrait. Holding here keeps the session reusable.
     private func advanceIfWaitingOnPortrait() {
         guard case .awaitingLivenessSession(let challenge) = displayState else { return }
-        guard orientationObserver.decision == .proceed else { return }
 
         let newState = disableStartView
         ? DisplayState.displayingLiveness
         : DisplayState.displayingGetReadyView(challenge, challengeOptions.camera(for: challenge))
         guard self.displayState != newState else { return }
         self.displayState = newState
-    }
-
-    /// Ends a running check when the interface leaves portrait, the same way scene deactivation
-    /// does. Deferred so the state change lands outside the view update.
-    private func interruptCheckIfOrientationUnsupported() {
-        guard orientationObserver.decision == .blockUntilPortrait,
-              displayState == .displayingLiveness
-        else { return }
-
-        DispatchQueue.main.async {
-            viewModel.endCheck(with: .viewResignation)
-        }
-    }
-
-    /// Cancels from the rotate prompt through the state machine, like the close button, so a
-    /// pending rotation interrupt finds the check already finished.
-    private func cancelFromRotatePrompt() {
-        viewModel.endCheck(with: .userCancelled)
     }
 
     /// Overrides the device screen brightness to maximum for the liveness check,

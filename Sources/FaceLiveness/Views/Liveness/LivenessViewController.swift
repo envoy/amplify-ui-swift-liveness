@@ -71,7 +71,10 @@ final class _LivenessViewController: UIViewController {
         guard previewLayer == nil else { return }
         let cameraFrame = LivenessPreviewGeometry.previewRect(fittingIn: view.bounds.size)
 
-        guard let avLayer = viewModel.configureCamera(withinFrame: cameraFrame) else {
+        guard let avLayer = viewModel.configureCamera(
+            withinFrame: cameraFrame,
+            interfaceOrientation: currentInterfaceOrientation
+        ) else {
             DispatchQueue.main.async { [weak self] in
                 self?.viewModel.livenessState
                     .unrecoverableStateEncountered(.missingVideoPermission)
@@ -96,6 +99,7 @@ final class _LivenessViewController: UIViewController {
     /// Re-fits the preview layer and the oval to the view's current size. Skipped while the
     /// fitted rect is unchanged (which also stops the layout pass recursing) or has no area.
     private func updateGeometryForCurrentViewSize() {
+        updateCameraOrientation()
         guard let previewLayer = self.previewLayer else { return }
 
         let cameraFrame = LivenessPreviewGeometry.previewRect(fittingIn: view.bounds.size)
@@ -104,6 +108,15 @@ final class _LivenessViewController: UIViewController {
         previewLayer.frame = cameraFrame
         viewModel.cameraViewRect = cameraFrame
         viewModel.redrawOvalForCurrentCameraViewRect()
+    }
+
+    func updateCameraOrientation() {
+        viewModel.updateCameraOrientation(currentInterfaceOrientation)
+    }
+
+    private var currentInterfaceOrientation: UIInterfaceOrientation {
+        view.window?.windowScene?.interfaceOrientation
+            ?? LivenessOrientation.currentInterfaceOrientation
     }
 
     var runningFreshness = false

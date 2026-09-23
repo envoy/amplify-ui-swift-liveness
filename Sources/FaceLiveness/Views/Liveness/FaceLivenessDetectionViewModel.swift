@@ -169,9 +169,15 @@ class FaceLivenessDetectionViewModel: ObservableObject {
         livenessState.unrecoverableStateEncountered(error)
     }
 
-    func configureCamera(withinFrame frame: CGRect) -> CALayer? {
+    func configureCamera(
+        withinFrame frame: CGRect,
+        interfaceOrientation: UIInterfaceOrientation
+    ) -> CALayer? {
         do {
-            let avLayer = try captureSession?.configureCamera(frame: frame)
+            let avLayer = try captureSession?.configureCamera(
+                frame: frame,
+                interfaceOrientation: interfaceOrientation
+            )
             DispatchQueue.main.async { [weak self] in
                 self?.livenessState.checkIsFacePrepared()
             }
@@ -185,6 +191,10 @@ class FaceLivenessDetectionViewModel: ObservableObject {
             }
             return nil
         }
+    }
+
+    func updateCameraOrientation(_ interfaceOrientation: UIInterfaceOrientation) {
+        captureSession?.updateInterfaceOrientation(interfaceOrientation)
     }
 
     func drawOval(onComplete: @escaping () -> Void) {

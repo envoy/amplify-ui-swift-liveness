@@ -50,8 +50,15 @@ final class VideoChunker {
     }
 
     func consume(_ buffer: CMSampleBuffer) {
+        guard let imageBuffer = buffer.imageBuffer else { return }
+        consume(
+            imageBuffer,
+            presentationTime: CMSampleBufferGetPresentationTimeStamp(buffer)
+        )
+    }
+
+    func consume(_ imageBuffer: CVPixelBuffer, presentationTime timestamp: CMTime) {
         if state == .awaitingSingleFrame {
-            guard let imageBuffer = buffer.imageBuffer else { return }
             let singleFrame = singleFrame(from: imageBuffer)
             provideSingleFrame?(singleFrame)
             state = .complete
@@ -60,13 +67,15 @@ final class VideoChunker {
         guard state == .writing else { return }
 
         if assetWriterInput.isReadyForMoreMediaData {
-            let timestamp = CMSampleBufferGetPresentationTimeStamp(buffer).seconds
-            if startTimeSeconds == nil { startTimeSeconds = timestamp }
+            let timestampSeconds = timestamp.seconds
+            if startTimeSeconds == nil { startTimeSeconds = timestampSeconds }
             guard let startTimeSeconds else {
                 return
             }
-            let presentationTime = CMTime(seconds: timestamp - startTimeSeconds, preferredTimescale: 600)
-            guard let imageBuffer = buffer.imageBuffer else { return }
+            let presentationTime = CMTime(
+                seconds: timestampSeconds - startTimeSeconds,
+                preferredTimescale: 600
+            )
 
             pixelBufferAdaptor.append(
                 imageBuffer,

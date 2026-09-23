@@ -7,18 +7,13 @@
 
 import CoreGraphics
 
-/// Where the camera image sits on screen. The preview layer, the oval, and face landmark
-/// normalization all derive from the rect computed here, matching the SwiftUI overlay's
-/// `.aspectRatio(3/4, contentMode: .fit)`.
 enum LivenessPreviewGeometry {
-    /// Width / height of the camera image.
     static let previewAspectRatio: CGFloat = 3.0 / 4.0
 
-    /// The largest centered 3:4 rect inside `viewport`; `.zero` if `viewport` is empty.
     static func previewRect(fittingIn viewport: CGSize) -> CGRect {
         guard viewport.width > 0, viewport.height > 0 else { return .zero }
 
-        let width = min(viewport.width, viewport.height * previewAspectRatio)
+        let width = max(viewport.width, viewport.height * previewAspectRatio)
         let height = width / previewAspectRatio
 
         return CGRect(
