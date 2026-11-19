@@ -44,11 +44,7 @@ final class _LivenessViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = UIColor(
-            red: 246 / 255,
-            green: 246 / 255,
-            blue: 249 / 255,
-            alpha: 1)
+        view.backgroundColor = .clear
         layoutSubviews()
         setupAVLayer()
     }
@@ -182,8 +178,6 @@ extension _LivenessViewController: FaceLivenessViewControllerPresenter {
     func drawOvalInCanvas(_ ovalRect: CGRect) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            // Keep the server-provided oval geometry for face-position matching, but do not
-            // draw Amplify's oval over Envoy's circular selfie preview.
             self.ovalView?.removeFromSuperview()
             self.ovalView = nil
             self.ovalRect = ovalRect

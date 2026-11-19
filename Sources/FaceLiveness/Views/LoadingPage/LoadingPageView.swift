@@ -6,18 +6,19 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct LoadingPageView: View {
+    var referenceImage: UIImage?
 
     var body: some View {
-        ZStack {
-            Color(red: 246 / 255, green: 246 / 255, blue: 249 / 255)
-                .ignoresSafeArea()
-
+        LivenessCaptureLayout(guidance: .gettingReady, referenceImage: referenceImage) { _ in
             ProgressView()
-                .tint(Color(red: 63 / 255, green: 68 / 255, blue: 80 / 255))
-                .scaleEffect(1.35)
+                .progressViewStyle(.circular)
+                .tint(.white)
+                .scaleEffect(1.6)
         }
+        .edgesIgnoringSafeArea(.all)
     }
 }
 

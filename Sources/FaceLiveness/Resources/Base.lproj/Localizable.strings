@@ -52,3 +52,22 @@
 "amplify_ui_liveness_face_not_prepared_reason_no_face" = "Move face in front of camera";
 "amplify_ui_liveness_face_not_prepared_reason_multiple_faces" = "Only one face per check";
 "amplify_ui_liveness_face_not_prepared_reason_face_too_close" = "Move face farther away";
+
+"amplify_ui_liveness_guidance_getting_ready_title" = "Getting the camera ready";
+"amplify_ui_liveness_guidance_getting_ready_detail" = "This only takes a moment";
+"amplify_ui_liveness_guidance_look_title" = "Look at the camera";
+"amplify_ui_liveness_guidance_look_detail" = "Keep your head still. No need to turn it.";
+"amplify_ui_liveness_guidance_face_missing_detail" = "We can’t see your face yet";
+"amplify_ui_liveness_guidance_lean_in_title" = "Lean in closer";
+"amplify_ui_liveness_guidance_lean_in_detail" = "Fill the oval with your face";
+"amplify_ui_liveness_guidance_move_back_title" = "Move back a little";
+"amplify_ui_liveness_guidance_move_back_detail" = "Keep your whole face in view";
+"amplify_ui_liveness_guidance_one_face_title" = "Just you, please";
+"amplify_ui_liveness_guidance_one_face_detail" = "Only one face can be in view";
+"amplify_ui_liveness_guidance_brighter_title" = "Find more light";
+"amplify_ui_liveness_guidance_dimmer_title" = "Find softer light";
+"amplify_ui_liveness_guidance_lighting_detail" = "Your face needs to be evenly lit";
+"amplify_ui_liveness_guidance_hold_title" = "Hold still";
+"amplify_ui_liveness_guidance_hold_detail" = "Almost done";
+"amplify_ui_liveness_guidance_done_title" = "Got it";
+"amplify_ui_liveness_guidance_done_detail" = "Checking it against your ID";

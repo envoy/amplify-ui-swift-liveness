@@ -152,7 +152,7 @@ public struct FaceLivenessDetectorView: View {
     private var content: some View {
         switch displayState {
         case .awaitingChallengeType:
-            LoadingPageView()
+            LoadingPageView(referenceImage: referenceImage)
             .onAppear {
                 Task {
                     do {
@@ -200,7 +200,7 @@ public struct FaceLivenessDetectorView: View {
                     checkCameraPermission(for: challenge)
                 }
         case .awaitingLivenessSession:
-            Color.clear
+            LoadingPageView(referenceImage: referenceImage)
                 .onAppear {
                     advanceIfWaitingOnPortrait()
                 }
