@@ -64,8 +64,8 @@
 "amplify_ui_liveness_guidance_move_back_detail" = "Fit your face inside the oval";
 "amplify_ui_liveness_guidance_one_face_title" = "Only you, please";
 "amplify_ui_liveness_guidance_one_face_detail" = "Make sure no one else is in view";
-"amplify_ui_liveness_guidance_brighter_title" = "Find more light";
-"amplify_ui_liveness_guidance_dimmer_title" = "Too much light";
+"amplify_ui_liveness_guidance_brighter_title" = "Too dark";
+"amplify_ui_liveness_guidance_dimmer_title" = "Too bright";
 "amplify_ui_liveness_guidance_lighting_detail" = "Your face should be evenly lit";
 "amplify_ui_liveness_guidance_hold_title" = "Hold still";
 "amplify_ui_liveness_guidance_hold_detail" = "Keep your face in the oval";
