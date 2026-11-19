@@ -48,7 +48,7 @@ final class LivenessGuidanceTests: XCTestCase {
 
         XCTAssertEqual(beforeOval, .moveBack(showsOval: false))
         XCTAssertEqual(duringOval, .moveBack(showsOval: true))
-        XCTAssertEqual(duringOval.tone, .warning)
+        XCTAssertFalse(duringOval.isMatched)
         XCTAssertEqual(duringOval.motion, .shrink)
     }
 
@@ -68,12 +68,14 @@ final class LivenessGuidanceTests: XCTestCase {
 
         XCTAssertEqual(guidance, .holdStill)
         XCTAssertEqual(guidance.progress, 1)
-        XCTAssertEqual(guidance.tone, .success)
+        XCTAssertTrue(guidance.isMatched)
     }
 
-    func testFinishingShowsTheCompletionMark() {
+    func testFinishingKeepsTheMatchAndSaysGotIt() {
         for state in [LivenessStateMachine.State.completedNoLightCheck, .completed] {
-            XCTAssertTrue(LivenessGuidance(state: state).isComplete, "\(state)")
+            let guidance = LivenessGuidance(state: state)
+            XCTAssertEqual(guidance, .done, "\(state)")
+            XCTAssertTrue(guidance.isMatched, "\(state)")
         }
     }
 
@@ -89,6 +91,6 @@ final class LivenessGuidanceTests: XCTestCase {
             LivenessGuidance.Motion.shrink.sweep(at: start, amplitude: 0.2).scale,
             LivenessGuidance.Motion.shrink.sweep(at: later, amplitude: 0.2).scale
         )
-        XCTAssertEqual(LivenessGuidance.Motion.still.pulse(at: later, amplitude: 0.2), 1)
+        XCTAssertEqual(LivenessGuidance.Motion.still.sweep(at: later, amplitude: 0.2).opacity, 0)
     }
 }

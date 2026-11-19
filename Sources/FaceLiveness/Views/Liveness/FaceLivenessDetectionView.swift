@@ -27,6 +27,7 @@ public struct FaceLivenessDetectorView: View {
     let disableStartView: Bool
     let challengeOptions: ChallengeOptions
     let referenceImage: UIImage?
+    let theme: FaceLivenessTheme
     let onCompletion: (Result<Void, FaceLivenessDetectionError>) -> Void
 
     let sessionTask: Task<FaceLivenessSession, Error>
@@ -38,6 +39,7 @@ public struct FaceLivenessDetectorView: View {
         disableStartView: Bool = false,
         challengeOptions: ChallengeOptions = .init(),
         referenceImage: UIImage? = nil,
+        theme: FaceLivenessTheme = FaceLivenessTheme(),
         isPresented: Binding<Bool>,
         onCompletion: @escaping (Result<Void, FaceLivenessDetectionError>) -> Void
     ) {        
@@ -46,6 +48,7 @@ public struct FaceLivenessDetectorView: View {
         self.onCompletion = onCompletion
         self.challengeOptions = challengeOptions
         self.referenceImage = referenceImage
+        self.theme = theme
 
         self.sessionTask = Task {
             let session = try await AWSPredictionsPlugin.startFaceLivenessSession(
@@ -88,6 +91,7 @@ public struct FaceLivenessDetectorView: View {
         disableStartView: Bool = false,
         challengeOptions: ChallengeOptions = .init(),
         referenceImage: UIImage? = nil,
+        theme: FaceLivenessTheme = FaceLivenessTheme(),
         isPresented: Binding<Bool>,
         onCompletion: @escaping (Result<Void, FaceLivenessDetectionError>) -> Void,
         captureSession: LivenessCaptureSession
@@ -97,6 +101,7 @@ public struct FaceLivenessDetectorView: View {
         self.onCompletion = onCompletion
         self.challengeOptions = challengeOptions
         self.referenceImage = referenceImage
+        self.theme = theme
 
         self.sessionTask = Task {
             let session = try await AWSPredictionsPlugin.startFaceLivenessSession(
@@ -127,6 +132,7 @@ public struct FaceLivenessDetectorView: View {
 
     public var body: some View {
         content
+        .environment(\.livenessTheme, theme)
         .onReceive(viewModel.$livenessState) { output in
             // one observer for every display state, so any exit that reaches a terminal
             // state dismisses and fires the host's completion exactly once

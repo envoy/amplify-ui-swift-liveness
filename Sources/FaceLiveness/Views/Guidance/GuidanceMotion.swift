@@ -3,8 +3,6 @@ import SwiftUI
 struct GuidanceMotionFrame {
     let scale: CGFloat
     let opacity: Double
-
-    static let rest = GuidanceMotionFrame(scale: 1, opacity: 1)
 }
 
 extension LivenessGuidance.Motion {
@@ -12,12 +10,6 @@ extension LivenessGuidance.Motion {
 
     var isAnimated: Bool {
         self != .still
-    }
-
-    func pulse(at date: Date, amplitude: CGFloat) -> CGFloat {
-        guard isAnimated else { return 1 }
-        let wave = sin(date.timeIntervalSinceReferenceDate * 2 * .pi / Self.period)
-        return 1 + amplitude * CGFloat(wave)
     }
 
     func sweep(at date: Date, amplitude: CGFloat) -> GuidanceMotionFrame {
@@ -31,7 +23,7 @@ extension LivenessGuidance.Motion {
             return GuidanceMotionFrame(scale: 1 - amplitude * (1 - eased), opacity: fade)
         case .shrink:
             return GuidanceMotionFrame(scale: 1 + amplitude * (1 - eased), opacity: fade)
-        case .still, .breathe:
+        case .still:
             return GuidanceMotionFrame(scale: 1, opacity: 0)
         }
     }

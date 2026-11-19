@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct OvalGuide: View {
+    @Environment(\.livenessTheme) private var theme
     let oval: CGRect
     let guidance: LivenessGuidance
 
@@ -10,34 +11,24 @@ struct OvalGuide: View {
 
             ZStack {
                 OvalScrim(oval: oval)
-                    .fill(Color.white.opacity(0.55), style: FillStyle(eoFill: true))
+                    .fill(Color(theme.background).opacity(0.6), style: FillStyle(eoFill: true))
 
                 Ellipse()
-                    .stroke(Color.white.opacity(0.9), lineWidth: 4)
+                    .stroke(Color.white.opacity(0.9), lineWidth: 3)
                     .frame(width: oval.width, height: oval.height)
                     .scaleEffect(sweep.scale)
                     .opacity(sweep.opacity)
                     .position(x: oval.midX, y: oval.midY)
 
                 Ellipse()
-                    .stroke(strokeColor, style: strokeStyle)
+                    .stroke(guidance.isMatched ? Color(theme.success) : .white, lineWidth: 4)
                     .frame(width: oval.width, height: oval.height)
                     .position(x: oval.midX, y: oval.midY)
             }
         }
-        .animation(.easeOut(duration: 0.2), value: guidance.tone)
+        .animation(.easeOut(duration: 0.2), value: guidance.isMatched)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-    }
-
-    private var strokeColor: Color {
-        guidance.tone == .guide ? .white : guidance.tone.color
-    }
-
-    private var strokeStyle: StrokeStyle {
-        guidance.tone == .guide
-            ? StrokeStyle(lineWidth: 5, lineCap: .round, dash: [14, 10])
-            : StrokeStyle(lineWidth: 7, lineCap: .round)
     }
 }
 
