@@ -26,26 +26,24 @@ struct _FaceLivenessDetectionView<VideoView: View>: View {
     var body: some View {
         let guidance = LivenessGuidance(state: viewModel.livenessState.state)
 
-        LivenessCaptureLayout(guidance: guidance, referenceImage: referenceImage) { diameter in
+        LivenessCaptureLayout(guidance: guidance, referenceImage: referenceImage) { _ in
+            videoView
+        } overlay: { size in
             ZStack {
-                videoView
-
-                if guidance.showsOval, let oval = ovalGuideRect(diameter: diameter) {
+                if guidance.showsOval, let oval = ovalGuideRect(fitting: size) {
                     OvalGuide(oval: oval, guidance: guidance)
-                        .transition(.opacity.combined(with: .scale(scale: 1.15)))
+                        .transition(.opacity)
                 }
             }
-            .animation(.spring(response: 0.45, dampingFraction: 0.8), value: guidance.showsOval)
+            .animation(.easeOut(duration: 0.35), value: guidance.showsOval)
         }
         .edgesIgnoringSafeArea(.all)
     }
 
-    private func ovalGuideRect(diameter: CGFloat) -> CGRect? {
+    private func ovalGuideRect(fitting size: CGSize) -> CGRect? {
         let oval = viewModel.ovalRect
         guard !oval.isEmpty else { return nil }
-        let preview = LivenessPreviewGeometry.previewRect(
-            fittingIn: CGSize(width: diameter, height: diameter)
-        )
+        let preview = LivenessPreviewGeometry.previewRect(fittingIn: size)
         return oval.offsetBy(dx: preview.minX, dy: preview.minY)
     }
 }

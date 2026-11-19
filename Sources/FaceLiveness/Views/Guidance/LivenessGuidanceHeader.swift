@@ -9,11 +9,16 @@ struct LivenessGuidanceHeader: View {
             Text(guidance.title)
                 .font(Font(theme.titleFont as CTFont))
                 .foregroundColor(Color(theme.ink))
+                .lineLimit(2)
 
-            Text(guidance.detail)
-                .font(Font(theme.bodyFont as CTFont))
-                .foregroundColor(Color(theme.secondaryInk))
+            if !guidance.detail.isEmpty {
+                Text(guidance.detail)
+                    .font(Font(theme.bodyFont as CTFont))
+                    .foregroundColor(Color(theme.secondaryInk))
+                    .lineLimit(2)
+            }
         }
+        .minimumScaleFactor(0.75)
         .multilineTextAlignment(.center)
         .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)

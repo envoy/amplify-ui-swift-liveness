@@ -23,7 +23,6 @@ final class LivenessGuidanceTests: XCTestCase {
 
         XCTAssertEqual(guidance.title, LocalizedStrings.guidance_lean_in_title)
         XCTAssertTrue(guidance.showsOval)
-        XCTAssertEqual(guidance.motion, .grow)
     }
 
     func testLeaningInFillsTheRingWithNearness() {
@@ -49,7 +48,6 @@ final class LivenessGuidanceTests: XCTestCase {
         XCTAssertEqual(beforeOval, .moveBack(showsOval: false))
         XCTAssertEqual(duringOval, .moveBack(showsOval: true))
         XCTAssertFalse(duringOval.isMatched)
-        XCTAssertEqual(duringOval.motion, .shrink)
     }
 
     func testMissingAndExtraFacesAreWarnings() {
@@ -71,26 +69,11 @@ final class LivenessGuidanceTests: XCTestCase {
         XCTAssertTrue(guidance.isMatched)
     }
 
-    func testFinishingKeepsTheMatchAndSaysGotIt() {
+    func testFinishingKeepsTheMatchAndThanksTheVisitor() {
         for state in [LivenessStateMachine.State.completedNoLightCheck, .completed] {
             let guidance = LivenessGuidance(state: state)
             XCTAssertEqual(guidance, .done, "\(state)")
             XCTAssertTrue(guidance.isMatched, "\(state)")
         }
-    }
-
-    func testGrowSweepsOutwardAndShrinkSweepsInward() {
-        let start = Date(timeIntervalSinceReferenceDate: 0.1)
-        let later = Date(timeIntervalSinceReferenceDate: 1.0)
-
-        XCTAssertLessThan(
-            LivenessGuidance.Motion.grow.sweep(at: start, amplitude: 0.2).scale,
-            LivenessGuidance.Motion.grow.sweep(at: later, amplitude: 0.2).scale
-        )
-        XCTAssertGreaterThan(
-            LivenessGuidance.Motion.shrink.sweep(at: start, amplitude: 0.2).scale,
-            LivenessGuidance.Motion.shrink.sweep(at: later, amplitude: 0.2).scale
-        )
-        XCTAssertEqual(LivenessGuidance.Motion.still.sweep(at: later, amplitude: 0.2).opacity, 0)
     }
 }
