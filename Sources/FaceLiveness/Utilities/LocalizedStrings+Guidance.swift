@@ -10,6 +10,7 @@ extension LocalizedStrings {
     static var guidance_lean_in_detail: String { "amplify_ui_liveness_guidance_lean_in_detail".localized() }
     static var guidance_move_back_title: String { "amplify_ui_liveness_guidance_move_back_title".localized() }
     static var guidance_move_back_detail: String { "amplify_ui_liveness_guidance_move_back_detail".localized() }
+    static var guidance_move_back_in_view_detail: String { "amplify_ui_liveness_guidance_move_back_in_view_detail".localized() }
     static var guidance_one_face_title: String { "amplify_ui_liveness_guidance_one_face_title".localized() }
     static var guidance_one_face_detail: String { "amplify_ui_liveness_guidance_one_face_detail".localized() }
     static var guidance_brighter_title: String { "amplify_ui_liveness_guidance_brighter_title".localized() }

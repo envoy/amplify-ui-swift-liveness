@@ -67,7 +67,9 @@ struct LivenessGuidance: Equatable {
     static func moveBack(showsOval: Bool) -> LivenessGuidance {
         LivenessGuidance(
             title: LocalizedStrings.guidance_move_back_title,
-            detail: LocalizedStrings.guidance_move_back_detail,
+            detail: showsOval
+                ? LocalizedStrings.guidance_move_back_detail
+                : LocalizedStrings.guidance_move_back_in_view_detail,
             showsOval: showsOval
         )
     }

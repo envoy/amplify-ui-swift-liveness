@@ -62,6 +62,7 @@
 "amplify_ui_liveness_guidance_lean_in_detail" = "Fill the oval with your face";
 "amplify_ui_liveness_guidance_move_back_title" = "Move back a little";
 "amplify_ui_liveness_guidance_move_back_detail" = "Fit your face inside the oval";
+"amplify_ui_liveness_guidance_move_back_in_view_detail" = "Keep your whole face in view";
 "amplify_ui_liveness_guidance_one_face_title" = "Only you, please";
 "amplify_ui_liveness_guidance_one_face_detail" = "Make sure no one else is in view";
 "amplify_ui_liveness_guidance_brighter_title" = "Too dark";

@@ -50,6 +50,14 @@ final class LivenessGuidanceTests: XCTestCase {
         XCTAssertFalse(duringOval.isMatched)
     }
 
+    func testOnlyMentionsTheOvalWhenItIsOnScreen() {
+        let beforeOval = LivenessGuidance(state: .pendingFacePreparedConfirmation(.faceTooClose))
+        let duringOval = LivenessGuidance(state: .awaitingFaceInOvalMatch(.faceTooClose, 1))
+
+        XCTAssertEqual(beforeOval.detail, LocalizedStrings.guidance_move_back_in_view_detail)
+        XCTAssertEqual(duringOval.detail, LocalizedStrings.guidance_move_back_detail)
+    }
+
     func testMissingAndExtraFacesAreWarnings() {
         XCTAssertEqual(
             LivenessGuidance(state: .awaitingFaceInOvalMatch(.noFace, 0)),
