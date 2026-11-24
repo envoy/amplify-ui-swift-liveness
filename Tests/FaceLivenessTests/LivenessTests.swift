@@ -211,7 +211,7 @@ final class FaceLivenessDetectionViewModelTestCase: XCTestCase {
         viewModel.livenessService = self.livenessService
         viewModel.livenessState = .init(state: .awaitingFaceInOvalMatch(.moveFaceCloser, 0.5))
 
-        viewModel.process(newResult: .multipleFaces)
+        viewModel.process(newResult: .multipleFaces([]))
         try await Task.sleep(seconds: 1)
 
         XCTAssertEqual(viewModel.livenessState.state, .awaitingFaceInOvalMatch(.multipleFaces, 0))

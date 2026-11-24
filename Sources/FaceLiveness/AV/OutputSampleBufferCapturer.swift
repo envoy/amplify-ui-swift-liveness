@@ -11,7 +11,11 @@ import CoreImage
 class OutputSampleBufferCapturer: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     let faceDetector: FaceDetector
     let videoChunker: VideoChunker
+    /// Gets a small copy of every fourth checked frame, for the blurred backdrop behind the
+    /// preview when it is scaled down. Called on the capture queue.
+    var onBackdrop: ((CGImage) -> Void)?
     private let frameProcessor = LivenessFrameProcessor()
+    private var frameCount = 0
 
     init(faceDetector: FaceDetector, videoChunker: VideoChunker) {
         self.faceDetector = faceDetector
@@ -32,6 +36,11 @@ class OutputSampleBufferCapturer: NSObject, AVCaptureVideoDataOutputSampleBuffer
             presentationTime: CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
         )
         faceDetector.detectFaces(from: imageBuffer)
+
+        frameCount += 1
+        if let onBackdrop, frameCount % 4 == 0, let thumbnail = frameProcessor.thumbnail(of: imageBuffer) {
+            onBackdrop(thumbnail)
+        }
     }
 }
 
@@ -50,6 +59,13 @@ private final class LivenessFrameProcessor {
         var createdPool: CVPixelBufferPool?
         CVPixelBufferPoolCreate(nil, nil, attributes as CFDictionary, &createdPool)
         pool = createdPool
+    }
+
+    /// A quarter-size copy of a checked frame; it is only ever shown heavily blurred.
+    func thumbnail(of buffer: CVPixelBuffer) -> CGImage? {
+        let image = CIImage(cvPixelBuffer: buffer)
+            .transformed(by: CGAffineTransform(scaleX: 0.25, y: 0.25))
+        return context.createCGImage(image, from: image.extent)
     }
 
     func portraitBuffer(from sourceBuffer: CVPixelBuffer) -> CVPixelBuffer? {

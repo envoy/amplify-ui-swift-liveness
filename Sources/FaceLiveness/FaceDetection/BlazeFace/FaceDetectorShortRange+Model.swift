@@ -52,7 +52,7 @@ extension FaceDetectorShortRange {
             case 1:
                 observationResult = .singleFace(faces[0])
             case 2...:
-                observationResult = .multipleFaces
+                observationResult = .multipleFaces(faces)
             default:
                 observationResult = .noFace
             }

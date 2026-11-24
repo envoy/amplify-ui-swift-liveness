@@ -35,5 +35,7 @@ struct LivenessCaptureDevice {
         if avCaptureDevice.isWhiteBalanceModeSupported(whiteBalance) {
             avCaptureDevice.whiteBalanceMode = whiteBalance
         }
+
+        Self.turnOffCenterStage()
     }
 }

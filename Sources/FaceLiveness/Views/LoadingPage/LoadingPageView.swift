@@ -8,15 +8,26 @@
 import SwiftUI
 import UIKit
 
+/// While the session and camera start: the capture screen over black, already asking the
+/// visitor to stand in front of the iPad, so the image simply appears under it.
 struct LoadingPageView: View {
     var referenceImage: UIImage?
 
     var body: some View {
-        LivenessCaptureLayout(guidance: .gettingReady, referenceImage: referenceImage) { _ in
-            ProgressView()
-                .progressViewStyle(.circular)
-                .tint(.white)
-                .scaleEffect(1.6)
+        GeometryReader { proxy in
+            let orientation = LivenessOrientation.currentInterfaceOrientation
+            LivenessCaptureScreen(
+                step: .stepIn,
+                oval: nil,
+                face: nil,
+                otherFaces: [],
+                checkedRect: LivenessPreviewGeometry.previewRect(
+                    fittingIn: proxy.size,
+                    cameraIsLandscape: orientation.isLandscape
+                ),
+                cameraEdge: LivenessCameraEdge.current(in: orientation),
+                camera: Color.black
+            )
         }
         .edgesIgnoringSafeArea(.all)
     }

@@ -69,10 +69,14 @@ final class _LivenessViewController: UIViewController {
 
     private func setupAVLayer() {
         guard previewLayer == nil else { return }
-        let cameraFrame = LivenessPreviewGeometry.previewRect(fittingIn: view.bounds.size)
+        let checkedRect = LivenessPreviewGeometry.previewRect(
+            fittingIn: view.bounds.size,
+            cameraIsLandscape: currentInterfaceOrientation.isLandscape
+        )
 
+        // The camera image fills the screen; the service checks its centred 3:4 crop.
         guard let avLayer = viewModel.configureCamera(
-            withinFrame: cameraFrame,
+            withinFrame: view.bounds,
             interfaceOrientation: currentInterfaceOrientation
         ) else {
             DispatchQueue.main.async { [weak self] in
@@ -82,10 +86,10 @@ final class _LivenessViewController: UIViewController {
             return
         }
 
-        // `cameraFrame` is already centered; `viewDidLayoutSubviews` takes over on resize
-        avLayer.frame = cameraFrame
+        // `viewDidLayoutSubviews` takes over on resize
+        avLayer.frame = view.bounds
         self.previewLayer = avLayer
-        viewModel.cameraViewRect = cameraFrame
+        viewModel.cameraViewRect = checkedRect
 
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
@@ -102,12 +106,56 @@ final class _LivenessViewController: UIViewController {
         updateCameraOrientation()
         guard let previewLayer = self.previewLayer else { return }
 
-        let cameraFrame = LivenessPreviewGeometry.previewRect(fittingIn: view.bounds.size)
-        guard !cameraFrame.isEmpty, cameraFrame != viewModel.cameraViewRect else { return }
+        let (checkedRect, cameraRect) = currentGeometry()
+        guard !checkedRect.isEmpty,
+              checkedRect != viewModel.cameraViewRect || previewLayer.frame != cameraRect
+        else { return }
 
-        previewLayer.frame = cameraFrame
-        viewModel.cameraViewRect = cameraFrame
+        previewLayer.frame = cameraRect
+        if let mask = previewLayer.mask {
+            mask.contents = Self.featheredMask(size: cameraRect.size)
+            mask.frame = CGRect(origin: .zero, size: cameraRect.size)
+        }
+        viewModel.cameraViewRect = checkedRect
         viewModel.redrawOvalForCurrentCameraViewRect()
+    }
+
+    /// The checked crop and the camera image on screen: the image fills the screen, and once the
+    /// service's oval is shown it is scaled down only as far as the oval needs to fit.
+    private func currentGeometry() -> (checked: CGRect, camera: CGRect) {
+        let isLandscape = currentInterfaceOrientation.isLandscape
+        if ovalExists, let oval = viewModel.normalizedOval {
+            let checked = LivenessPreviewGeometry.previewRect(
+                fittingIn: view.bounds.size,
+                cameraIsLandscape: isLandscape,
+                placingOval: oval
+            )
+            return (checked, LivenessPreviewGeometry.cameraRect(aroundPreview: checked, cameraIsLandscape: isLandscape))
+        }
+        let checked = LivenessPreviewGeometry.previewRect(fittingIn: view.bounds.size, cameraIsLandscape: isLandscape)
+        return (checked, view.bounds)
+    }
+
+    /// An alpha mask that fades the scaled-down camera image into the blurred backdrop over its
+    /// outer 64 pt, so no edge shows where the sharp image ends.
+    static func featheredMask(size: CGSize) -> CGImage? {
+        guard size.width > 1, size.height > 1 else { return nil }
+        let feather = min(64, size.width / 4, size.height / 4)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: size, format: format).image { context in
+            let steps = Int(feather)
+            for step in 0..<steps {
+                let inset = CGFloat(step)
+                let alpha = CGFloat(step + 1) / CGFloat(steps)
+                UIColor(white: 1, alpha: alpha * alpha * (3 - 2 * alpha)).setStroke()
+                let ring = UIBezierPath(rect: CGRect(origin: .zero, size: size).insetBy(dx: inset + 0.5, dy: inset + 0.5))
+                ring.lineWidth = 1
+                ring.stroke()
+            }
+            UIColor.white.setFill()
+            context.fill(CGRect(origin: .zero, size: size).insetBy(dx: feather, dy: feather))
+        }.cgImage
     }
 
     func updateCameraOrientation() {
@@ -180,8 +228,24 @@ extension _LivenessViewController: FaceLivenessViewControllerPresenter {
             guard let self else { return }
             self.ovalView?.removeFromSuperview()
             self.ovalView = nil
-            self.ovalRect = ovalRect
+            let isFirstOval = !self.ovalExists
             self.ovalExists = true
+            if isFirstOval, let previewLayer = self.previewLayer {
+                // Scale the image down, if needed, so the oval fits inside the light bar.
+                let (checkedRect, cameraRect) = self.currentGeometry()
+                CATransaction.begin()
+                CATransaction.setAnimationDuration(UIAccessibility.isReduceMotionEnabled ? 0 : 0.45)
+                CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(controlPoints: 0.45, 0, 0.2, 1))
+                previewLayer.frame = cameraRect
+                let mask = CALayer()
+                mask.contents = Self.featheredMask(size: cameraRect.size)
+                mask.frame = CGRect(origin: .zero, size: cameraRect.size)
+                previewLayer.mask = mask
+                CATransaction.commit()
+                self.viewModel.cameraViewRect = checkedRect
+                self.viewModel.refitOvalToCameraViewRect()
+            }
+            self.ovalRect = isFirstOval ? self.viewModel.ovalRect : ovalRect
         }
     }
     

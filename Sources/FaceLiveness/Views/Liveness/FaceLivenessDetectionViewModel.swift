@@ -19,6 +19,13 @@ class FaceLivenessDetectionViewModel: ObservableObject {
     @Published var readyForOval = false
     @Published var isRecording = false
     @Published var livenessState: LivenessStateMachine
+    /// The visitor's face on screen (the largest face found), for the guidance drawn over the
+    /// camera; nil while no face is in view.
+    @Published var faceRect: CGRect?
+    /// Any other faces in view, so the guidance can mark the people who have to step away.
+    @Published var otherFaceRects: [CGRect] = []
+    /// A small, frequent copy of the camera image, blurred behind the preview when it is scaled down.
+    @Published var backdrop: CGImage?
 
     weak var livenessViewControllerDelegate: FaceLivenessViewControllerPresenter?
     var captureSession: LivenessCaptureSession?
@@ -178,6 +185,11 @@ class FaceLivenessDetectionViewModel: ObservableObject {
                 frame: frame,
                 interfaceOrientation: interfaceOrientation
             )
+            captureSession?.outputSampleBufferCapturer?.onBackdrop = { [weak self] image in
+                DispatchQueue.main.async {
+                    self?.backdrop = image
+                }
+            }
             DispatchQueue.main.async { [weak self] in
                 self?.livenessState.checkIsFacePrepared()
             }
@@ -234,6 +246,24 @@ class FaceLivenessDetectionViewModel: ObservableObject {
 
         ovalRect = normalizedOvalRect
         livenessViewControllerDelegate?.drawOvalInCanvas(normalizedOvalRect)
+    }
+
+    /// The service's oval as fractions of the checked frame, once the challenge is known.
+    var normalizedOval: CGRect? {
+        guard let ovalMatchChallenge else { return nil }
+        let box = ovalMatchChallenge.oval.boundingBox
+        return CGRect(
+            x: box.x / videoSize.width,
+            y: box.y / videoSize.height,
+            width: box.width / videoSize.width,
+            height: box.height / videoSize.height
+        )
+    }
+
+    /// Recomputes the oval for the current `cameraViewRect` after the preview is scaled to fit it.
+    func refitOvalToCameraViewRect() {
+        guard !cameraViewRect.isEmpty, let ovalMatchChallenge else { return }
+        ovalRect = computeOvalRect(for: ovalMatchChallenge)
     }
 
     private func computeOvalRect(

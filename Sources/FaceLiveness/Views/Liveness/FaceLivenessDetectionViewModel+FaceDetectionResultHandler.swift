@@ -13,6 +13,8 @@ fileprivate let initialFaceDistanceThreshold: CGFloat = 0.32
 
 extension FaceLivenessDetectionViewModel: FaceDetectionResultHandler {
     func process(newResult: FaceDetectionResult) {
+        publishFaces(in: newResult)
+
         switch newResult {
         case .noFace:
             handleFaceUnavailable(reason: .noFace)
@@ -53,9 +55,21 @@ extension FaceLivenessDetectionViewModel: FaceDetectionResultHandler {
                     return
                 }
             case .recording(ovalDisplayed: false):
+                // Drawing the oval can scale the preview, which changes `cameraViewRect` before the
+                // event is sent; scale the face to the new rect so its fractions stay as detected.
+                let detectionRect = cameraViewRect
+                let initialFace = normalizedFace.boundingBox
                 drawOval(onComplete: {
+                    let current = self.cameraViewRect
+                    let scaleX = detectionRect.width > 0 ? current.width / detectionRect.width : 1
+                    let scaleY = detectionRect.height > 0 ? current.height / detectionRect.height : 1
                     self.sendInitialFaceDetectedEvent(
-                        initialFace: normalizedFace.boundingBox,
+                        initialFace: CGRect(
+                            x: initialFace.minX * scaleX,
+                            y: initialFace.minY * scaleY,
+                            width: initialFace.width * scaleX,
+                            height: initialFace.height * scaleY
+                        ),
                         videoStartTime: Date().timestampMilliseconds
                     )
                 })
@@ -84,6 +98,28 @@ extension FaceLivenessDetectionViewModel: FaceDetectionResultHandler {
             default: break
 
             }
+        }
+    }
+
+    /// Publishes where the faces in this frame are on screen, largest first: the largest is taken
+    /// to be the visitor, the rest are people behind them.
+    private func publishFaces(in result: FaceDetectionResult) {
+        let faces: [DetectedFace]
+        switch result {
+        case .noFace:
+            faces = []
+        case .singleFace(let face):
+            faces = [face]
+        case .multipleFaces(let found):
+            faces = found
+        }
+        let origin = cameraViewRect.origin
+        let rects = faces
+            .map { normalizeFace($0).boundingBox.offsetBy(dx: origin.x, dy: origin.y) }
+            .sorted { $0.width * $0.height > $1.width * $1.height }
+        DispatchQueue.main.async {
+            self.faceRect = rects.first
+            self.otherFaceRects = Array(rects.dropFirst())
         }
     }
 

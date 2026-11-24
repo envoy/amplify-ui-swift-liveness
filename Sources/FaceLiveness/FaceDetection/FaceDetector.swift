@@ -24,5 +24,6 @@ protocol FaceDetectionSessionConfigurationWrapper: AnyObject {
 enum FaceDetectionResult {
     case noFace
     case singleFace(DetectedFace)
-    case multipleFaces
+    /// Every face found, so the guidance can mark the ones that have to step away.
+    case multipleFaces([DetectedFace])
 }
