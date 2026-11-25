@@ -6,7 +6,7 @@
 //
 
 import AVFoundation
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 
 protocol FaceDetector {
     func detectFaces(from buffer: CVPixelBuffer)

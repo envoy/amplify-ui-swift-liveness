@@ -8,7 +8,7 @@
 import XCTest
 import UIKit
 @testable import FaceLiveness
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 
 @MainActor
 final class FaceLivenessDetectionViewModelGeometryTests: XCTestCase {

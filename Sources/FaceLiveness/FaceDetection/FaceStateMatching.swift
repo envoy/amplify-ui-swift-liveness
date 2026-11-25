@@ -6,7 +6,7 @@
 //
 
 import UIKit
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 import Amplify
 
 struct FaceInOvalMatching {

@@ -21,15 +21,23 @@ let package = Package(
             dependencies: [
                 .product(name: "AWSPluginsCore", package: "amplify-swift"),
                 .product(name: "AWSCognitoAuthPlugin", package: "amplify-swift"),
-                .product(name: "AWSPredictionsPlugin", package: "amplify-swift")
+                "FaceLivenessStreaming"
             ],
             resources: [
                 .process("Resources/Base.lproj"),
                 .copy("Resources/face_detection_short_range.mlmodelc")
             ]
         ),
+        // Copied from AWSPredictionsPlugin, whose CoreML adapter links Speech and makes App Store Connect demand a purpose string.
+        .target(
+            name: "FaceLivenessStreaming",
+            dependencies: [
+                .product(name: "Amplify", package: "amplify-swift"),
+                .product(name: "AWSPluginsCore", package: "amplify-swift")
+            ]
+        ),
         .testTarget(
             name: "FaceLivenessTests",
-            dependencies: ["FaceLiveness"]),
+            dependencies: ["FaceLiveness", "FaceLivenessStreaming"]),
     ]
 )

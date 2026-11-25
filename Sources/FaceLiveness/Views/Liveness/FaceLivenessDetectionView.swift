@@ -8,10 +8,10 @@
 import SwiftUI
 import AWSClientRuntime
 import protocol AWSPluginsCore.AWSCredentialsProvider
-import AWSPredictionsPlugin
+import FaceLivenessStreaming
 import AVFoundation
 import Amplify
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 
 public struct FaceLivenessDetectorView: View {
     @StateObject var viewModel: FaceLivenessDetectionViewModel
@@ -51,7 +51,7 @@ public struct FaceLivenessDetectorView: View {
         self.theme = theme
 
         self.sessionTask = Task {
-            let session = try await AWSPredictionsPlugin.startFaceLivenessSession(
+            let session = try await FaceLivenessSession.start(
                 withID: sessionID,
                 credentialsProvider: credentialsProvider,
                 region: region,
@@ -104,7 +104,7 @@ public struct FaceLivenessDetectorView: View {
         self.theme = theme
 
         self.sessionTask = Task {
-            let session = try await AWSPredictionsPlugin.startFaceLivenessSession(
+            let session = try await FaceLivenessSession.start(
                 withID: sessionID,
                 credentialsProvider: credentialsProvider,
                 region: region,

@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 
 struct GetReadyPageView: View {
     let beginCheckButtonDisabled: Bool

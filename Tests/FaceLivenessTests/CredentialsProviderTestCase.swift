@@ -9,8 +9,8 @@ import XCTest
 import SwiftUI
 import AWSPluginsCore
 @testable import FaceLiveness
-@testable import AWSPredictionsPlugin
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@testable import FaceLivenessStreaming
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 
 @MainActor
 final class CredentialsProviderTestCase: XCTestCase {

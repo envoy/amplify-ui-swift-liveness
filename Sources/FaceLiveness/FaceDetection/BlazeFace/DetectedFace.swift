@@ -6,7 +6,7 @@
 //
 
 import Foundation
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 
 struct DetectedFace {
     var boundingBox: CGRect

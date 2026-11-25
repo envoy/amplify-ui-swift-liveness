@@ -7,7 +7,7 @@
 
 import AVFoundation
 @testable import FaceLiveness
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 
 final class MockFaceDetector {
     var interactions: [String] = []

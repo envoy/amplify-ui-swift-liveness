@@ -7,7 +7,7 @@
 
 import Foundation
 import SwiftUI
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 
 fileprivate let initialFaceDistanceThreshold: CGFloat = 0.32
 

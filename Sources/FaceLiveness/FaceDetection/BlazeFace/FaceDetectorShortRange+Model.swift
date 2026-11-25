@@ -12,7 +12,7 @@ import Accelerate
 import CoreGraphics
 import CoreImage
 import VideoToolbox
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 
 enum FaceDetectorShortRange {}
 

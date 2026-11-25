@@ -8,7 +8,7 @@
 import UIKit
 import XCTest
 @testable import FaceLiveness
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 
 /// Records the oval rects the view model asks to have drawn.
 final class MockLivenessViewControllerPresenter: FaceLivenessViewControllerPresenter {

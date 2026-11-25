@@ -7,7 +7,7 @@
 
 import SwiftUI
 import AVFoundation
-import AWSPredictionsPlugin
+import FaceLivenessStreaming
 
 struct CameraView: UIViewControllerRepresentable {
     @ObservedObject var faceLivenessDetectionViewModel: FaceLivenessDetectionViewModel

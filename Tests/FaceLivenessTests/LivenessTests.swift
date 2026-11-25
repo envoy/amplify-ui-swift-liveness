@@ -1,7 +1,7 @@
 import XCTest
 import Combine
 @testable import FaceLiveness
-@_spi(PredictionsFaceLiveness) import AWSPredictionsPlugin
+@_spi(PredictionsFaceLiveness) import FaceLivenessStreaming
 
 @MainActor
 final class FaceLivenessDetectionViewModelTestCase: XCTestCase {
