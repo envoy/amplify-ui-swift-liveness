@@ -17,10 +17,10 @@ enum LivenessCaptureStep: Equatable {
     case onlyOnePerson
     case tooDark
     case tooBright
-    /// The face fills the oval; the ring completes and turns green.
+    /// The face fills the oval; the ring completes.
     case holdStill
 
-    /// The one line shown at the bottom of the screen.
+    /// The one line shown under the camera.
     var title: String {
         switch self {
         case .faceFound:
@@ -56,17 +56,8 @@ enum LivenessCaptureStep: Equatable {
         }
     }
 
-    /// Steps that change what the guides draw, ignoring the ring's progress, so loops restart
-    /// only when the guidance itself changes.
-    var kind: String {
-        switch self {
-        case .fillOval:
-            "fillOval"
-        case .moveToSide(let towardRight):
-            "moveToSide\(towardRight)"
-        default:
-            String(describing: self)
-        }
+    var isMovingToSide: Bool {
+        if case .moveToSide = self { true } else { false }
     }
 }
 
@@ -123,9 +114,21 @@ extension LivenessCaptureStep {
     func confirmingTooClose(face: CGRect?, oval: CGRect?, nearness: Double) -> LivenessCaptureStep {
         guard self == .moveBack, let oval else { return self }
         guard let face else { return .fillOval(progress: Self.ringProgress(nearness: nearness)) }
-        let head = LivenessFaceGuides.headRect(around: face)
+        let head = Self.headRect(around: face)
         let isBiggerThanOval = head.height > oval.height * 1.05 || head.width > oval.width * 1.05
         return isBiggerThanOval ? self : .fillOval(progress: Self.ringProgress(nearness: nearness))
+    }
+
+    /// The whole head around a detected face box, which runs only from the brows to the chin.
+    static func headRect(around face: CGRect) -> CGRect {
+        let width = face.width * 1.5
+        let height = face.height * 1.55
+        return CGRect(
+            x: face.midX - width / 2,
+            y: face.midY - face.height * 0.08 - height / 2,
+            width: width,
+            height: height
+        )
     }
 
     /// Swaps in "move to the side" when the face is far enough off centre that leaning in alone

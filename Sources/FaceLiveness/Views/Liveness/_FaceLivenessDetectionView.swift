@@ -14,6 +14,7 @@ struct _FaceLivenessDetectionView<VideoView: View>: View {
     @ObservedObject var viewModel: FaceLivenessDetectionViewModel
     /// Whether the last step asked to move to one side, so that guidance doesn't flicker.
     @State private var isGuidingToSide = false
+    @Environment(\.livenessTheme) private var theme
 
     init(
         viewModel: FaceLivenessDetectionViewModel,
@@ -27,35 +28,25 @@ struct _FaceLivenessDetectionView<VideoView: View>: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let orientation = LivenessOrientation.currentInterfaceOrientation
-            // Where the checked crop is now: it moves when the preview is scaled to fit the oval.
-            let liveRect = viewModel.cameraViewRect
-            let checkedRect = liveRect.isEmpty
-                ? LivenessPreviewGeometry.previewRect(fittingIn: proxy.size, cameraIsLandscape: orientation.isLandscape)
-                : liveRect
-            let oval = ovalOnScreen(in: checkedRect)
+            // The view controller places the camera so this oval lands exactly on the window.
+            let window = LivenessPreviewGeometry.window(
+                in: proxy.size,
+                theme: theme,
+                normalizedOval: (isOvalShown ? viewModel.normalizedOval : nil) ?? LivenessCaptureStyle.nominalOval
+            )
+            let oval = isOvalShown ? window : nil
             let step = LivenessCaptureStep(state: viewModel.livenessState.state)
                 .confirmingTooClose(face: viewModel.faceRect, oval: oval, nearness: nearness)
                 .guidingToSide(
-                face: viewModel.faceRect,
-                target: oval ?? checkedRect,
-                wasGuidingToSide: isGuidingToSide
-            )
-            LivenessCaptureScreen(
-                step: step,
-                oval: oval,
-                face: viewModel.faceRect,
-                otherFaces: viewModel.otherFaceRects,
-                checkedRect: checkedRect,
-                cameraEdge: LivenessCameraEdge.current(in: orientation),
-                camera: ZStack {
-                    LivenessBackdrop(image: viewModel.backdrop)
-                    videoView
+                    face: viewModel.faceRect,
+                    target: oval ?? viewModel.cameraViewRect,
+                    wasGuidingToSide: isGuidingToSide
+                )
+            LivenessCaptureScreen(step: step, window: window, camera: videoView)
+                .animation(LivenessCaptureStyle.windowAnimation, value: isOvalShown)
+                .onChange(of: step.isMovingToSide) { isMovingToSide in
+                    isGuidingToSide = isMovingToSide
                 }
-            )
-            .onChange(of: step.kind) { kind in
-                isGuidingToSide = kind.hasPrefix("moveToSide")
-            }
         }
         .edgesIgnoringSafeArea(.all)
     }
@@ -68,37 +59,15 @@ struct _FaceLivenessDetectionView<VideoView: View>: View {
         return 0
     }
 
-    /// The service's oval on screen while the check shows it.
-    private func ovalOnScreen(in checkedRect: CGRect) -> CGRect? {
+    /// Whether the check is showing the service's oval.
+    private var isOvalShown: Bool {
         switch viewModel.livenessState.state {
         case .recording(ovalDisplayed: true), .awaitingFaceInOvalMatch, .faceMatched, .displayingFreshness,
              .completedNoLightCheck, .completedDisplayingFreshness, .completed,
              .awaitingDisconnectEvent, .disconnectEventReceived:
-            let oval = viewModel.ovalRect
-            guard !oval.isEmpty else { return nil }
-            return oval.offsetBy(dx: checkedRect.minX, dy: checkedRect.minY)
+            true
         default:
-            return nil
+            false
         }
-    }
-}
-
-/// A blurred copy of the camera filling the screen behind the scaled-down preview, so the screen
-/// still reads as a camera.
-struct LivenessBackdrop: View {
-    let image: CGImage?
-
-    var body: some View {
-        GeometryReader { proxy in
-            if let image {
-                Image(decorative: image, scale: 1)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: proxy.size.width, height: proxy.size.height)
-                    .blur(radius: 28)
-                    .clipped()
-            }
-        }
-        .accessibilityHidden(true)
     }
 }

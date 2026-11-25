@@ -101,8 +101,7 @@ extension FaceLivenessDetectionViewModel: FaceDetectionResultHandler {
         }
     }
 
-    /// Publishes where the faces in this frame are on screen, largest first: the largest is taken
-    /// to be the visitor, the rest are people behind them.
+    /// Publishes where the visitor's face is on screen, taken to be the largest face in the frame.
     private func publishFaces(in result: FaceDetectionResult) {
         let faces: [DetectedFace]
         switch result {
@@ -114,12 +113,11 @@ extension FaceLivenessDetectionViewModel: FaceDetectionResultHandler {
             faces = found
         }
         let origin = cameraViewRect.origin
-        let rects = faces
+        let largest = faces
             .map { normalizeFace($0).boundingBox.offsetBy(dx: origin.x, dy: origin.y) }
-            .sorted { $0.width * $0.height > $1.width * $1.height }
+            .max { $0.width * $0.height < $1.width * $1.height }
         DispatchQueue.main.async {
-            self.faceRect = rects.first
-            self.otherFaceRects = Array(rects.dropFirst())
+            self.faceRect = largest
         }
     }
 

@@ -21,6 +21,13 @@ final class _LivenessViewController: UIViewController {
     var freshness = Freshness()
     let freshnessView = FreshnessView()
     var readyForOval = false
+    /// The host's page layout, which places the camera window.
+    var theme = FaceLivenessTheme() {
+        didSet {
+            guard theme != oldValue, isViewLoaded else { return }
+            view.setNeedsLayout()
+        }
+    }
 
     init(
         viewModel: FaceLivenessDetectionViewModel
@@ -69,12 +76,8 @@ final class _LivenessViewController: UIViewController {
 
     private func setupAVLayer() {
         guard previewLayer == nil else { return }
-        let checkedRect = LivenessPreviewGeometry.previewRect(
-            fittingIn: view.bounds.size,
-            cameraIsLandscape: currentInterfaceOrientation.isLandscape
-        )
+        let (checkedRect, cameraRect) = currentGeometry()
 
-        // The camera image fills the screen; the service checks its centred 3:4 crop.
         guard let avLayer = viewModel.configureCamera(
             withinFrame: view.bounds,
             interfaceOrientation: currentInterfaceOrientation
@@ -87,7 +90,7 @@ final class _LivenessViewController: UIViewController {
         }
 
         // `viewDidLayoutSubviews` takes over on resize
-        avLayer.frame = view.bounds
+        avLayer.frame = cameraRect
         self.previewLayer = avLayer
         viewModel.cameraViewRect = checkedRect
 
@@ -111,51 +114,25 @@ final class _LivenessViewController: UIViewController {
               checkedRect != viewModel.cameraViewRect || previewLayer.frame != cameraRect
         else { return }
 
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
         previewLayer.frame = cameraRect
-        if let mask = previewLayer.mask {
-            mask.contents = Self.featheredMask(size: cameraRect.size)
-            mask.frame = CGRect(origin: .zero, size: cameraRect.size)
-        }
+        CATransaction.commit()
         viewModel.cameraViewRect = checkedRect
         viewModel.redrawOvalForCurrentCameraViewRect()
     }
 
-    /// The checked crop and the camera image on screen: the image fills the screen, and once the
-    /// service's oval is shown it is scaled down only as far as the oval needs to fit.
+    /// The checked crop and the camera image on screen, placed so the oval lands on the camera
+    /// window: the service's oval once it is shown, before that one of the usual proportions.
     private func currentGeometry() -> (checked: CGRect, camera: CGRect) {
-        let isLandscape = currentInterfaceOrientation.isLandscape
-        if ovalExists, let oval = viewModel.normalizedOval {
-            let checked = LivenessPreviewGeometry.previewRect(
-                fittingIn: view.bounds.size,
-                cameraIsLandscape: isLandscape,
-                placingOval: oval
-            )
-            return (checked, LivenessPreviewGeometry.cameraRect(aroundPreview: checked, cameraIsLandscape: isLandscape))
-        }
-        let checked = LivenessPreviewGeometry.previewRect(fittingIn: view.bounds.size, cameraIsLandscape: isLandscape)
-        return (checked, view.bounds)
-    }
-
-    /// An alpha mask that fades the scaled-down camera image into the blurred backdrop over its
-    /// outer 64 pt, so no edge shows where the sharp image ends.
-    static func featheredMask(size: CGSize) -> CGImage? {
-        guard size.width > 1, size.height > 1 else { return nil }
-        let feather = min(64, size.width / 4, size.height / 4)
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        return UIGraphicsImageRenderer(size: size, format: format).image { context in
-            let steps = Int(feather)
-            for step in 0..<steps {
-                let inset = CGFloat(step)
-                let alpha = CGFloat(step + 1) / CGFloat(steps)
-                UIColor(white: 1, alpha: alpha * alpha * (3 - 2 * alpha)).setStroke()
-                let ring = UIBezierPath(rect: CGRect(origin: .zero, size: size).insetBy(dx: inset + 0.5, dy: inset + 0.5))
-                ring.lineWidth = 1
-                ring.stroke()
-            }
-            UIColor.white.setFill()
-            context.fill(CGRect(origin: .zero, size: size).insetBy(dx: feather, dy: feather))
-        }.cgImage
+        let oval = (ovalExists ? viewModel.normalizedOval : nil) ?? LivenessCaptureStyle.nominalOval
+        let window = LivenessPreviewGeometry.window(in: view.bounds.size, theme: theme, normalizedOval: oval)
+        let checked = LivenessPreviewGeometry.previewRect(placing: oval, on: window)
+        let camera = LivenessPreviewGeometry.cameraRect(
+            aroundPreview: checked,
+            cameraIsLandscape: currentInterfaceOrientation.isLandscape
+        )
+        return (checked, camera)
     }
 
     func updateCameraOrientation() {
@@ -231,16 +208,14 @@ extension _LivenessViewController: FaceLivenessViewControllerPresenter {
             let isFirstOval = !self.ovalExists
             self.ovalExists = true
             if isFirstOval, let previewLayer = self.previewLayer {
-                // Scale the image down, if needed, so the oval fits inside the light bar.
+                // Move the image so the service's oval lands on the window, as the window takes its shape.
                 let (checkedRect, cameraRect) = self.currentGeometry()
                 CATransaction.begin()
-                CATransaction.setAnimationDuration(UIAccessibility.isReduceMotionEnabled ? 0 : 0.45)
+                CATransaction.setAnimationDuration(
+                    UIAccessibility.isReduceMotionEnabled ? 0 : LivenessCaptureStyle.windowAnimationDuration
+                )
                 CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(controlPoints: 0.45, 0, 0.2, 1))
                 previewLayer.frame = cameraRect
-                let mask = CALayer()
-                mask.contents = Self.featheredMask(size: cameraRect.size)
-                mask.frame = CGRect(origin: .zero, size: cameraRect.size)
-                previewLayer.mask = mask
                 CATransaction.commit()
                 self.viewModel.cameraViewRect = checkedRect
                 self.viewModel.refitOvalToCameraViewRect()

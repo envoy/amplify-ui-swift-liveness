@@ -6,11 +6,11 @@
 //
 
 import CoreGraphics
+import UIKit
 
 /// Where the camera image and the part of it the service checks sit on screen.
 ///
-/// The preview fills the whole screen. The frames sent to the service are the centred 3:4 portrait
-/// crop of the camera image (`LivenessFrameProcessor` scales the 4:3 VGA frame to fill 480 × 640),
+/// The frames sent to the service are the centred 3:4 portrait crop of the camera image (`LivenessFrameProcessor` scales the 4:3 VGA frame to fill 480 × 640),
 /// so faces and the service's oval are measured in that crop's rect on screen.
 enum LivenessPreviewGeometry {
     /// Width / height of the frames the service checks.
@@ -52,60 +52,52 @@ enum LivenessPreviewGeometry {
         )
     }
 
-    /// The room the oval has: inside the light bar, and above the one-line instruction, with a
-    /// 24 pt margin to each.
-    static func ovalBand(in viewport: CGSize) -> CGRect {
-        let bar = LivenessCaptureStyle.lightBarWidth
-        let margin: CGFloat = 24
-        let caption = LivenessCaptureStyle.captionGap + LivenessCaptureStyle.titleSize * LivenessCaptureStyle.titleLineHeightMultiple
+    /// The camera window on screen for an oval of `normalizedOval`'s proportions: centred across
+    /// the screen, and centred down it together with the ring and one line of instruction, inside
+    /// the theme's insets. It is as tall as the room allows, up to `LivenessCaptureStyle`'s limits.
+    static func window(in viewport: CGSize, theme: FaceLivenessTheme, normalizedOval: CGRect) -> CGRect {
+        guard viewport.width > 0, viewport.height > 0, normalizedOval.width > 0, normalizedOval.height > 0 else {
+            return .zero
+        }
+        let outset = LivenessCaptureStyle.ringOutset
+        let insets = theme.contentInsets
+        let caption = LivenessCaptureStyle.captionGap + theme.titleLineHeight
+        let room = CGRect(
+            x: insets.left,
+            y: insets.top,
+            width: viewport.width - insets.left - insets.right,
+            height: viewport.height - insets.top - insets.bottom
+        )
+        // Width / height of the oval on screen: the checked frame is 3:4.
+        let aspect = normalizedOval.width / normalizedOval.height * previewAspectRatio
+        let height = max(0, min(
+            room.height - caption - 2 * outset,
+            (room.width - 2 * outset) / aspect,
+            viewport.height * LivenessCaptureStyle.windowHeightShare,
+            LivenessCaptureStyle.maximumWindowHeight
+        ))
+        let width = height * aspect
+        let group = height + 2 * outset + caption
         return CGRect(
-            x: bar + margin,
-            y: bar + margin,
-            width: viewport.width - 2 * (bar + margin),
-            height: viewport.height - (bar + margin) - (bar + caption + margin)
+            x: room.midX - width / 2,
+            y: room.minY + (room.height - group) / 2 + outset,
+            width: width,
+            height: height
         )
     }
 
-    /// Where the checked crop sits once the service's oval is known. The camera keeps filling the
-    /// screen when the oval fits between the light bar and the instruction. When it doesn't (the
-    /// service's oval can be most of the frame), the image is scaled down just enough, about the
-    /// oval's centre, and moved so the oval sits inside that room; a blurred copy of the camera
-    /// fills the edges. The camera itself is never zoomed, so the face on screen grows exactly as
-    /// the visitor leans in. `normalizedOval` is the oval as fractions of the checked frame.
-    static func previewRect(
-        fittingIn viewport: CGSize,
-        cameraIsLandscape: Bool,
-        placingOval normalizedOval: CGRect
-    ) -> CGRect {
-        let cover = previewRect(fittingIn: viewport, cameraIsLandscape: cameraIsLandscape)
-        guard !cover.isEmpty, normalizedOval.width > 0, normalizedOval.height > 0 else { return cover }
-
-        func oval(in crop: CGRect) -> CGRect {
-            CGRect(
-                x: crop.minX + normalizedOval.minX * crop.width,
-                y: crop.minY + normalizedOval.minY * crop.height,
-                width: normalizedOval.width * crop.width,
-                height: normalizedOval.height * crop.height
-            )
-        }
-
-        let band = ovalBand(in: viewport)
-        let natural = oval(in: cover)
-        let scale = min(1, band.height / natural.height, band.width / natural.width)
-        var crop = CGRect(
-            x: natural.midX - (natural.midX - cover.minX) * scale,
-            y: natural.midY - (natural.midY - cover.minY) * scale,
-            width: cover.width * scale,
-            height: cover.height * scale
+    /// The checked frame on screen that puts `normalizedOval` exactly on `window`, so the face in
+    /// the window grows exactly as the visitor leans in toward the service's oval.
+    static func previewRect(placing normalizedOval: CGRect, on window: CGRect) -> CGRect {
+        guard normalizedOval.height > 0, window.height > 0 else { return .zero }
+        let height = window.height / normalizedOval.height
+        let width = height * previewAspectRatio
+        return CGRect(
+            x: window.minX - normalizedOval.minX * width,
+            y: window.minY - normalizedOval.minY * height,
+            width: width,
+            height: height
         )
-
-        let placed = oval(in: crop)
-        var dx: CGFloat = 0
-        var dy: CGFloat = 0
-        if placed.minX < band.minX { dx = band.minX - placed.minX } else if placed.maxX > band.maxX { dx = band.maxX - placed.maxX }
-        if placed.minY < band.minY { dy = band.minY - placed.minY } else if placed.maxY > band.maxY { dy = band.maxY - placed.maxY }
-        crop = crop.offsetBy(dx: dx, dy: dy)
-        return crop
     }
 
     /// The whole camera image around a checked crop: the crop is its centred 3:4 part.

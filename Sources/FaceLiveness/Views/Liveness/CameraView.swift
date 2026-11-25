@@ -24,6 +24,7 @@ struct CameraView: UIViewControllerRepresentable {
         let livenessViewController = _LivenessViewController(
             viewModel: faceLivenessDetectionViewModel
         )
+        livenessViewController.theme = context.environment.livenessTheme
         return livenessViewController
     }
 
@@ -31,6 +32,7 @@ struct CameraView: UIViewControllerRepresentable {
         _ uiViewController: _LivenessViewController,
         context: Context
     ) {
+        uiViewController.theme = context.environment.livenessTheme
         uiViewController.updateCameraOrientation()
     }
 }

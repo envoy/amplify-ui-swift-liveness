@@ -29,10 +29,10 @@ final class LivenessViewControllerGeometryTests: XCTestCase {
         // the controller registers itself as the presenter in `init`
         viewModel.livenessViewControllerDelegate = presenter
 
-        // what `setupAVLayer` does off the pre-layout frame: the camera fills the screen and the
-        // service checks its centred 3:4 crop
+        // what `setupAVLayer` does off the pre-layout frame: the camera is placed so the oval
+        // lands on the window, and the service checks its centred 3:4 crop
         previewLayer = CALayer()
-        previewLayer.frame = CGRect(origin: .zero, size: screen)
+        previewLayer.frame = cameraRect(in: screen)
         viewController.previewLayer = previewLayer
         viewModel.cameraViewRect = checkedRect(in: screen)
 
@@ -47,10 +47,24 @@ final class LivenessViewControllerGeometryTests: XCTestCase {
         presenter = nil
     }
 
+    /// The camera window for a view of `size`, before the service's oval is shown.
+    private func cameraWindow(in size: CGSize) -> CGRect {
+        LivenessPreviewGeometry.window(
+            in: size,
+            theme: FaceLivenessTheme(),
+            normalizedOval: LivenessCaptureStyle.nominalOval
+        )
+    }
+
     /// The part of the camera the service checks for a view of `size`.
     private func checkedRect(in size: CGSize) -> CGRect {
-        LivenessPreviewGeometry.previewRect(
-            fittingIn: size,
+        LivenessPreviewGeometry.previewRect(placing: LivenessCaptureStyle.nominalOval, on: cameraWindow(in: size))
+    }
+
+    /// The whole camera image for a view of `size`.
+    private func cameraRect(in size: CGSize) -> CGRect {
+        LivenessPreviewGeometry.cameraRect(
+            aroundPreview: checkedRect(in: size),
             cameraIsLandscape: LivenessOrientation.currentInterfaceOrientation.isLandscape
         )
     }
@@ -74,7 +88,7 @@ final class LivenessViewControllerGeometryTests: XCTestCase {
 
         layout(to: screen)
 
-        assertRect(previewLayer.frame, CGRect(origin: .zero, size: screen))
+        assertRect(previewLayer.frame, cameraRect(in: screen))
         assertRect(viewModel.cameraViewRect, checkedRect(in: screen))
         XCTAssertEqual(viewModel.ovalRect, drawnOval)
         XCTAssertEqual(presenter.drawnOvalRects.count, 1)
@@ -90,12 +104,11 @@ final class LivenessViewControllerGeometryTests: XCTestCase {
         layout(to: window)
 
         let fitted = checkedRect(in: window)
-        assertRect(previewLayer.frame, CGRect(origin: .zero, size: window))
+        assertRect(previewLayer.frame, cameraRect(in: window))
         assertRect(viewModel.cameraViewRect, fitted)
-        XCTAssertGreaterThanOrEqual(previewLayer.frame.minX, 0)
-        XCTAssertGreaterThanOrEqual(previewLayer.frame.minY, 0)
-        XCTAssertLessThanOrEqual(previewLayer.frame.maxX, window.width)
-        XCTAssertLessThanOrEqual(previewLayer.frame.maxY, window.height)
+        let fittedWindow = cameraWindow(in: window)
+        XCTAssertFalse(fittedWindow.isEmpty)
+        XCTAssertTrue(CGRect(origin: .zero, size: window).contains(fittedWindow))
 
         let expectedOval = LivenessGeometryFixture.expectedOval(forPreviewWidth: fitted.width)
         XCTAssertEqual(presenter.drawnOvalRects.count, 2)
@@ -114,7 +127,7 @@ final class LivenessViewControllerGeometryTests: XCTestCase {
 
         layout(to: .zero)
 
-        assertRect(previewLayer.frame, CGRect(origin: .zero, size: window), "layer must keep its last frame")
+        assertRect(previewLayer.frame, cameraRect(in: window), "layer must keep its last frame")
         assertRect(viewModel.cameraViewRect, fitted, "camera rect must keep its last value")
         XCTAssertFalse(viewModel.cameraViewRect.isEmpty)
         XCTAssertEqual(viewModel.ovalRect, drawnOval, "oval must be left on screen")
@@ -124,7 +137,7 @@ final class LivenessViewControllerGeometryTests: XCTestCase {
         layout(to: rotated)
 
         let refitted = checkedRect(in: rotated)
-        assertRect(previewLayer.frame, CGRect(origin: .zero, size: rotated))
+        assertRect(previewLayer.frame, cameraRect(in: rotated))
         assertRect(viewModel.cameraViewRect, refitted)
         XCTAssertEqual(presenter.drawnOvalRects.count, 2, "the next real pass must redraw")
         assertRect(viewModel.ovalRect, LivenessGeometryFixture.expectedOval(forPreviewWidth: refitted.width))
@@ -140,7 +153,7 @@ final class LivenessViewControllerGeometryTests: XCTestCase {
         layout(to: rotated)
 
         let refitted = checkedRect(in: rotated)
-        assertRect(previewLayer.frame, CGRect(origin: .zero, size: rotated))
+        assertRect(previewLayer.frame, cameraRect(in: rotated))
         assertRect(viewModel.cameraViewRect, refitted)
         XCTAssertTrue(presenter.drawnOvalRects.isEmpty)
         XCTAssertEqual(viewModel.ovalRect, .zero)

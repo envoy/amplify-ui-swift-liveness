@@ -84,28 +84,6 @@ final class LivenessGuidanceTests: XCTestCase {
         XCTAssertEqual(LivenessCaptureStep.holdStill.guidingToSide(face: leftOfOval, target: oval, wasGuidingToSide: false), .holdStill)
     }
 
-    func testTheCameraEdgeFollowsTheModelAndRotation() {
-        // A long-edge camera is on the right in portrait and at the top in landscape-right.
-        XCTAssertEqual(LivenessCameraEdge.edge(forModel: "iPad16,3", in: .portrait), .right)
-        XCTAssertEqual(LivenessCameraEdge.edge(forModel: "iPad16,3", in: .landscapeRight), .top)
-        XCTAssertEqual(LivenessCameraEdge.edge(forModel: "iPad13,18", in: .landscapeLeft), .bottom)
-        XCTAssertEqual(LivenessCameraEdge.edge(forModel: "iPad17,1", in: .landscapeRight), .top)
-        // A short-edge camera is at the top in portrait and on the left in landscape-right.
-        XCTAssertEqual(LivenessCameraEdge.edge(forModel: "iPad14,3", in: .portrait), .top)
-        XCTAssertEqual(LivenessCameraEdge.edge(forModel: "iPad14,3", in: .landscapeRight), .left)
-        XCTAssertEqual(LivenessCameraEdge.edge(forModel: "iPad14,3", in: .landscapeLeft), .right)
-        XCTAssertEqual(LivenessCameraEdge.edge(forModel: "iPad16,1", in: .portrait), .top)
-    }
-
-    func testTimingCurvesMatchCSS() {
-        XCTAssertEqual(LivenessTimingCurve.easeInOut.value(at: 0.5), 0.5, accuracy: 0.001)
-        XCTAssertEqual(LivenessTimingCurve.glide.value(at: 0), 0)
-        XCTAssertEqual(LivenessTimingCurve.glide.value(at: 1), 1)
-        let keyframes = LivenessKeyframes([(0, 0), (0.5, 7), (1, 0)], curve: .easeInOut)
-        XCTAssertEqual(keyframes.value(at: 0.5), 7, accuracy: 0.001)
-        XCTAssertEqual(keyframes.value(atSeconds: 1.8 + 0.9, period: 1.8), 7, accuracy: 0.001)
-    }
-
     func testMoveBackOnlyWhenTheFaceIsBiggerThanTheOval() {
         let oval = CGRect(x: 400, y: 150, width: 360, height: 480)
         // A face the right size, but sitting high: Amazon calls it too close, it isn't.

@@ -22,10 +22,6 @@ class FaceLivenessDetectionViewModel: ObservableObject {
     /// The visitor's face on screen (the largest face found), for the guidance drawn over the
     /// camera; nil while no face is in view.
     @Published var faceRect: CGRect?
-    /// Any other faces in view, so the guidance can mark the people who have to step away.
-    @Published var otherFaceRects: [CGRect] = []
-    /// A small, frequent copy of the camera image, blurred behind the preview when it is scaled down.
-    @Published var backdrop: CGImage?
 
     weak var livenessViewControllerDelegate: FaceLivenessViewControllerPresenter?
     var captureSession: LivenessCaptureSession?
@@ -185,11 +181,6 @@ class FaceLivenessDetectionViewModel: ObservableObject {
                 frame: frame,
                 interfaceOrientation: interfaceOrientation
             )
-            captureSession?.outputSampleBufferCapturer?.onBackdrop = { [weak self] image in
-                DispatchQueue.main.async {
-                    self?.backdrop = image
-                }
-            }
             DispatchQueue.main.async { [weak self] in
                 self?.livenessState.checkIsFacePrepared()
             }

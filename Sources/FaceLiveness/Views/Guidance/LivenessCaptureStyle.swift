@@ -1,63 +1,39 @@
 import SwiftUI
 import UIKit
 
-/// The fixed colours and sizes of the capture screen, from the approved "Face check guidance"
-/// design. The instruction's font comes from `FaceLivenessTheme`.
+/// The fixed sizes of the capture screen, from the approved "Face check" design. The
+/// colours, the instruction's font and the room kept for the host's chrome come from
+/// `FaceLivenessTheme`.
 enum LivenessCaptureStyle {
-    /// The light bar's normal width, and its width when the face is too dark.
-    static let lightBarWidth: CGFloat = 34
-    static let brightLightBarWidth: CGFloat = 50
+    /// The ring round the camera window: 10 pt wide, with an 18 pt gap to the window.
+    static let ringGap: CGFloat = 18
+    static let ringWidth: CGFloat = 10
+    static let track = Color(red: 235 / 255, green: 235 / 255, blue: 240 / 255)
+    /// The window before the camera's first frame.
+    static let emptyWindow = Color(red: 228 / 255, green: 230 / 255, blue: 235 / 255)
 
-    /// The dark tint over the camera outside the oval, and over the whole image before it.
-    static let scrim = Color(red: 11 / 255, green: 13 / 255, blue: 18 / 255)
-    static let scrimOpacity = 0.5
-    static let faceFoundTintOpacity = 0.12
-    static let searchTintOpacity = 0.18
-
-    /// The ring's white track, and the green it turns when the face fills the oval.
-    static let trackOpacity = 0.32
-    static let ringWidth: CGFloat = 6
-    static let matched = Color(red: 78 / 255, green: 193 / 255, blue: 118 / 255)
-
-    /// The caption's shade: clear to 78% over the bottom 360 pt.
-    static let captionShade = Color(red: 10 / 255, green: 12 / 255, blue: 18 / 255)
-    static let captionShadeHeight: CGFloat = 360
-    /// The caption sits this far above the light bar, 64 pt in from the sides.
-    static let captionGap: CGFloat = 44
-    static let captionInset: CGFloat = 64
-    /// The instruction's size in the design (the theme's font sets the real one), and its 1.15
-    /// line height and -0.01 em tracking.
-    static let titleSize: CGFloat = 44
+    /// The instruction sits this far below the ring, at least this far in from the sides.
+    static let captionGap: CGFloat = 40
+    static let captionInset: CGFloat = 96
     static let titleLineHeightMultiple: CGFloat = 1.15
-    static let titleTracking: CGFloat = -0.01
 
-    /// The chevron and the "Camera" label on the white light bar.
-    static let chevronInk = Color(red: 31 / 255, green: 35 / 255, blue: 45 / 255)
-    static let labelInk = Color(red: 92 / 255, green: 98 / 255, blue: 112 / 255)
+    /// The camera window is at most this share of the screen's height, and this tall, so it reads
+    /// as part of the page in landscape and doesn't tower over it in portrait.
+    static let windowHeightShare: CGFloat = 0.58
+    static let maximumWindowHeight: CGFloat = 600
 
-    /// The app's 80 pt back button, translucent dark over the camera, its 14 pt corner concentric
-    /// with the camera window's 30 pt corner 16 pt away.
-    static let backButtonSize: CGFloat = 80
-    static let backButtonInset: CGFloat = 16
-    static let backButtonCornerRadius: CGFloat = 14
-    static let backButtonFill = Color(red: 12 / 255, green: 14 / 255, blue: 20 / 255).opacity(0.38)
-}
+    /// The oval assumed until the service sends its own, as fractions of the checked frame; it has
+    /// the service's usual proportions, so the window barely changes when the real one arrives.
+    static let nominalOval = CGRect(x: 0.2, y: 0.17, width: 0.6, height: 0.6)
 
-public extension View {
-    /// Shows the capture screen's back button, which runs `action`. Without it there is none.
-    func livenessBackAction(_ action: (() -> Void)?) -> some View {
-        environment(\.livenessBackAction, action)
+    /// The window moving onto the service's oval, in step with the camera image behind it.
+    static let windowAnimationDuration: TimeInterval = 0.45
+    static var windowAnimation: Animation? {
+        UIAccessibility.isReduceMotionEnabled ? nil : .timingCurve(0.45, 0, 0.2, 1, duration: windowAnimationDuration)
     }
-}
 
-/// What the back button does, set by the host; no button is shown without one.
-private struct LivenessBackActionKey: EnvironmentKey {
-    static let defaultValue: (() -> Void)? = nil
-}
-
-extension EnvironmentValues {
-    var livenessBackAction: (() -> Void)? {
-        get { self[LivenessBackActionKey.self] }
-        set { self[LivenessBackActionKey.self] = newValue }
+    /// How far outside the window the ring's outer edge reaches.
+    static var ringOutset: CGFloat {
+        ringGap + ringWidth / 2
     }
 }

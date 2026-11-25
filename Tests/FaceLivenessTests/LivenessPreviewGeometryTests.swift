@@ -414,4 +414,63 @@ final class LivenessPreviewGeometryTests: XCTestCase {
             assertRect(face, oval, "\(Int(viewport.width))x\(Int(viewport.height))")
         }
     }
+
+    // MARK: - Camera window
+
+    /// Given: The iPad's landscape and portrait screens, with room kept for the host's top bar and corner mark
+    /// When: The camera window is placed
+    /// Then: It is centred across, and the window, its ring and one line of instruction are centred in the room
+    func testTheWindowAndItsInstructionAreCentredInTheRoom() {
+        let theme = FaceLivenessTheme(contentInsets: UIEdgeInsets(top: 132, left: 0, bottom: 62, right: 0))
+        for viewport in [CGSize(width: 1180, height: 820), CGSize(width: 820, height: 1180)] {
+            let window = LivenessPreviewGeometry.window(
+                in: viewport,
+                theme: theme,
+                normalizedOval: LivenessCaptureStyle.nominalOval
+            )
+            let top = window.minY - LivenessCaptureStyle.ringOutset
+            let bottom = window.maxY + LivenessCaptureStyle.ringOutset + LivenessCaptureStyle.captionGap + theme.titleLineHeight
+            let name = "\(Int(viewport.width))x\(Int(viewport.height))"
+
+            XCTAssertEqual(window.midX, viewport.width / 2, accuracy: 0.001, name)
+            XCTAssertEqual(top - 132, viewport.height - 62 - bottom, accuracy: 0.001, name)
+            XCTAssertLessThanOrEqual(window.height, LivenessCaptureStyle.maximumWindowHeight, name)
+            XCTAssertEqual(window.width / window.height, 0.6 / 0.6 * 0.75, accuracy: 0.001, name)
+        }
+    }
+
+    /// Given: A tiny screen
+    /// When: The camera window is placed
+    /// Then: It shrinks to fit rather than running off the screen
+    func testTheWindowShrinksToFitASmallScreen() {
+        let viewport = CGSize(width: 300, height: 400)
+        let window = LivenessPreviewGeometry.window(
+            in: viewport,
+            theme: FaceLivenessTheme(),
+            normalizedOval: LivenessCaptureStyle.nominalOval
+        )
+        let ring = window.insetBy(dx: -LivenessCaptureStyle.ringOutset, dy: -LivenessCaptureStyle.ringOutset)
+
+        XCTAssertFalse(window.isEmpty)
+        XCTAssertTrue(CGRect(origin: .zero, size: viewport).contains(ring))
+    }
+
+    /// Given: A camera window and the service's oval as fractions of the checked frame
+    /// When: The checked frame is placed for it
+    /// Then: The oval lands exactly on the window
+    func testTheCheckedFramePutsTheOvalOnTheWindow() {
+        let window = CGRect(x: 412, y: 160, width: 330, height: 440)
+        let oval = CGRect(x: 0.22, y: 0.19, width: 0.56, height: 0.56)
+
+        let checked = LivenessPreviewGeometry.previewRect(placing: oval, on: window)
+        let ovalOnScreen = CGRect(
+            x: checked.minX + oval.minX * checked.width,
+            y: checked.minY + oval.minY * checked.height,
+            width: oval.width * checked.width,
+            height: oval.height * checked.height
+        )
+
+        assertRect(ovalOnScreen, window)
+        XCTAssertEqual(checked.width / checked.height, 0.75, accuracy: 0.001)
+    }
 }

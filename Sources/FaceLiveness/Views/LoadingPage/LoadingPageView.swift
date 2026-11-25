@@ -8,25 +8,22 @@
 import SwiftUI
 import UIKit
 
-/// While the session and camera start: the capture screen over black, already asking the
-/// visitor to stand in front of the iPad, so the image simply appears under it.
+/// While the session and camera start: the capture screen with an empty window, already asking
+/// the visitor to stand in front of the iPad, so the camera simply appears in it.
 struct LoadingPageView: View {
+    @Environment(\.livenessTheme) private var theme
     var referenceImage: UIImage?
 
     var body: some View {
         GeometryReader { proxy in
-            let orientation = LivenessOrientation.currentInterfaceOrientation
             LivenessCaptureScreen(
                 step: .stepIn,
-                oval: nil,
-                face: nil,
-                otherFaces: [],
-                checkedRect: LivenessPreviewGeometry.previewRect(
-                    fittingIn: proxy.size,
-                    cameraIsLandscape: orientation.isLandscape
+                window: LivenessPreviewGeometry.window(
+                    in: proxy.size,
+                    theme: theme,
+                    normalizedOval: LivenessCaptureStyle.nominalOval
                 ),
-                cameraEdge: LivenessCameraEdge.current(in: orientation),
-                camera: Color.black
+                camera: LivenessCaptureStyle.emptyWindow
             )
         }
         .edgesIgnoringSafeArea(.all)
